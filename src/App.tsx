@@ -13,11 +13,13 @@ import { AiConsultantPanel } from "./components/AiConsultantPanel";
 import { DailyMemoPanel, NewsArticlePanel } from "./components/DailyMemoPanel";
 import { TradingViewFxPanel } from "./components/TradingViewFxPanel";
 import { StrategicIntelligencePanel } from "./components/StrategicIntelligencePanel";
+import { MarketDataOpsPanel } from "./components/MarketDataOpsPanel";
 import { areas, industries, segments } from "./data/baseData";
 import { fallbackFred, fetchFred, fredValue, fredYoY, getFredCache, type FredPoint } from "./utils/fredClient";
 import { aggregateNews, fallbackGdelt, fetchGdelt, getGdeltCache, type TopicScore } from "./utils/gdeltClient";
 import { calculatePurchaseScore, computeMarketTemperature, recommendedRange } from "./utils/pricingEngine";
 import { computeStrategicIntelligence } from "./utils/strategicEngine";
+import { computeMarketDataOps } from "./utils/marketIntelligenceEngine";
 
 const envFredKey = import.meta.env.VITE_FRED_API_KEY as string | undefined;
 
@@ -47,6 +49,7 @@ export default function App() {
   const cpiYoY = fredYoY(fredData, "CPIAUCSL", 3.1);
   const fx = selectedFx || fredValue(fredData, "DEXJPUS", 156);
   const strategicIntelligence = useMemo(() => computeStrategicIntelligence(fredData, newsScores, fx), [fredData, newsScores, fx]);
+  const marketDataOps = useMemo(() => computeMarketDataOps(fredData, newsScores, fx), [fredData, newsScores, fx]);
   const marketTemperature = computeMarketTemperature({
     fx,
     cpiYoY,
@@ -101,6 +104,7 @@ export default function App() {
         </div>
         <TradingViewFxPanel />
         <StrategicIntelligencePanel intelligence={strategicIntelligence} />
+        <MarketDataOpsPanel ops={marketDataOps} />
         <PricingSimulator industries={industries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={setSelectedFx} />
         <div className="grid-2">
           <GeoNewsPanel scores={newsScores} />
