@@ -565,6 +565,68 @@ tr:hover td {
   margin-bottom: 8px;
 }
 
+.strategic-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.strategic-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.impact-card {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-height: 112px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.13), rgba(167, 139, 250, 0.1));
+  padding: 14px;
+}
+
+.impact-card strong {
+  color: #f8fafc;
+  font-size: 36px;
+  line-height: 1;
+}
+
+.strategic-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.signal-card {
+  display: grid;
+  gap: 9px;
+  min-height: 138px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.52);
+  padding: 12px;
+}
+
+.signal-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.strategic-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 14px;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 16px;
+  background: rgba(245, 158, 11, 0.07);
+  padding: 14px;
+}
+
 @media (max-width: 1100px) {
   .grid-5,
   .grid-4,
@@ -620,6 +682,15 @@ tr:hover td {
 
   .source-list {
     columns: 1;
+  }
+
+  .strategic-head,
+  .strategic-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .strategic-grid {
+    grid-template-columns: 1fr;
   }
 
   .topbar-inner,

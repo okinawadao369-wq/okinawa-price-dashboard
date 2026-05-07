@@ -12,10 +12,12 @@ import { UpdateControls } from "./components/UpdateControls";
 import { AiConsultantPanel } from "./components/AiConsultantPanel";
 import { DailyMemoPanel, NewsArticlePanel } from "./components/DailyMemoPanel";
 import { TradingViewFxPanel } from "./components/TradingViewFxPanel";
+import { StrategicIntelligencePanel } from "./components/StrategicIntelligencePanel";
 import { areas, industries, segments } from "./data/baseData";
 import { fallbackFred, fetchFred, fredValue, fredYoY, getFredCache, type FredPoint } from "./utils/fredClient";
 import { aggregateNews, fallbackGdelt, fetchGdelt, getGdeltCache, type TopicScore } from "./utils/gdeltClient";
 import { calculatePurchaseScore, computeMarketTemperature, recommendedRange } from "./utils/pricingEngine";
+import { computeStrategicIntelligence } from "./utils/strategicEngine";
 
 const envFredKey = import.meta.env.VITE_FRED_API_KEY as string | undefined;
 
@@ -44,6 +46,7 @@ export default function App() {
   const newsAgg = useMemo(() => aggregateNews(newsScores), [newsScores]);
   const cpiYoY = fredYoY(fredData, "CPIAUCSL", 3.1);
   const fx = selectedFx || fredValue(fredData, "DEXJPUS", 156);
+  const strategicIntelligence = useMemo(() => computeStrategicIntelligence(fredData, newsScores, fx), [fredData, newsScores, fx]);
   const marketTemperature = computeMarketTemperature({
     fx,
     cpiYoY,
@@ -52,7 +55,8 @@ export default function App() {
     consumerSentiment: fredValue(fredData, "UMCSENT", 61.8),
     geoRisk: newsAgg.geoRisk,
     forwardPosture: newsAgg.forwardPosture,
-    okinawaBase: newsAgg.okinawaBase
+    okinawaBase: newsAgg.okinawaBase,
+    strategicDemand: strategicIntelligence.strategicDemand
   });
   const range = recommendedRange(selectedIndustry, fx, cpiYoY, newsAgg.geoRisk);
   const score = calculatePurchaseScore({ item: selectedIndustry, segment: selectedSegment, area: selectedArea, priceJPY: price, fx, marketTemperature });
@@ -96,6 +100,7 @@ export default function App() {
           <UpdateControls autoUpdate={autoUpdate} setAutoUpdate={setAutoUpdate} timespan={selectedTimespan} setTimespan={setSelectedTimespan} onRefresh={refreshAll} loading={loading} logs={logs} fredInlineKey={fredInlineKey} setFredInlineKey={setFredInlineKey} />
         </div>
         <TradingViewFxPanel />
+        <StrategicIntelligencePanel intelligence={strategicIntelligence} />
         <PricingSimulator industries={industries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={setSelectedFx} />
         <div className="grid-2">
           <GeoNewsPanel scores={newsScores} />

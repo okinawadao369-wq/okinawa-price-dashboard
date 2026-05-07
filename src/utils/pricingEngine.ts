@@ -53,8 +53,9 @@ export function computeMarketTemperature(input: {
   geoRisk: number;
   forwardPosture: number;
   okinawaBase: number;
+  strategicDemand?: number;
 }) {
-  const { fx, cpiYoY, unemployment, averageHourlyEarnings, consumerSentiment, geoRisk, forwardPosture, okinawaBase } = input;
+  const { fx, cpiYoY, unemployment, averageHourlyEarnings, consumerSentiment, geoRisk, forwardPosture, okinawaBase, strategicDemand = 50 } = input;
   let score = 50;
   score += clamp((fx - 130) / 2.2, 0, 18);
   score += clamp((averageHourlyEarnings - 30) * 0.75, -8, 8);
@@ -64,6 +65,7 @@ export function computeMarketTemperature(input: {
   score += (geoRisk - 50) * 0.08;
   score += (forwardPosture - 50) * 0.1;
   score += (okinawaBase - 50) * 0.12;
+  score += (strategicDemand - 50) * 0.1;
   return clamp(Math.round(score), 0, 100);
 }
 
