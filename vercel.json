@@ -8,6 +8,10 @@
       "destination": "/api/fred"
     },
     {
+      "source": "/api/gdelt",
+      "destination": "/api/gdelt"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

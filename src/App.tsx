@@ -16,7 +16,7 @@ import { StrategicIntelligencePanel } from "./components/StrategicIntelligencePa
 import { MarketDataOpsPanel } from "./components/MarketDataOpsPanel";
 import { areas, industries, segments } from "./data/baseData";
 import { fallbackFred, fetchFred, fredValue, fredYoY, getFredCache, type FredPoint } from "./utils/fredClient";
-import { aggregateNews, fallbackGdelt, fetchGdelt, getGdeltCache, type TopicScore } from "./utils/gdeltClient";
+import { aggregateNews, fallbackGdelt, fetchGdelt, gdeltCacheNeedsRefresh, getGdeltCache, type TopicScore } from "./utils/gdeltClient";
 import { calculatePurchaseScore, computeMarketTemperature, recommendedRange } from "./utils/pricingEngine";
 import { computeStrategicIntelligence } from "./utils/strategicEngine";
 import { computeMarketDataOps } from "./utils/marketIntelligenceEngine";
@@ -89,9 +89,9 @@ export default function App() {
 
   useEffect(() => {
     const last = localStorage.getItem("lastUpdated");
-    const stale = !last || Date.now() - new Date(last).getTime() > 24 * 60 * 60 * 1000;
+    const stale = !last || Date.now() - new Date(last).getTime() > 24 * 60 * 60 * 1000 || gdeltCacheNeedsRefresh(selectedTimespan);
     if (autoUpdate && stale) void refreshAll();
-  }, [autoUpdate, refreshAll]);
+  }, [autoUpdate, refreshAll, selectedTimespan]);
 
   return (
     <div className="app-shell">

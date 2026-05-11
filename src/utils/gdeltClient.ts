@@ -21,11 +21,78 @@ export type TopicScore = {
   articles: NewsArticle[];
 };
 
+type GdeltCacheEnvelope = {
+  version: 3;
+  date: string;
+  timespan: string;
+  attemptedAt: string;
+  retryAfterMs: number;
+  data: TopicScore[];
+};
+
 const riskWords = ["missile", "nuclear", "war", "attack", "drill", "exercise", "deployment", "blockade", "invasion", "sanction", "tariff", "inflation", "layoff", "shutdown", "protest", "incident", "warning", "crisis", "tension", "military", "budget"];
 const positiveWords = ["agreement", "dialogue", "cooperation", "stable", "growth", "cooling", "decline", "easing", "peace", "support"];
 const cacheKey = "gdeltNewsCache";
+const lockKey = "gdeltFetchLock";
+const cacheTtlMs = 24 * 60 * 60 * 1000;
+const retryAfterMs = 30 * 60 * 1000;
+const lockTtlMs = 2 * 60 * 1000;
+const broadQuery = '(Taiwan OR "North Korea" OR DPRK OR USINDOPACOM OR "Indo-Pacific" OR Okinawa OR Kadena OR Futenma OR Henoko OR "Federal Reserve" OR FOMC OR "U.S. economy" OR inflation OR "gas prices" OR "government shutdown" OR "defense budget" OR oil OR shipping OR childcare OR "restaurant prices" OR Walmart OR Target OR Costco OR Starbucks OR McDonald\'s)';
+
+const topicKeywords: Record<string, string[]> = {
+  taiwan: ["taiwan", "taiwan strait", "china", "pla", "blockade", "invasion", "warship"],
+  northkorea: ["north korea", "dprk", "missile", "nuclear", "sanctions"],
+  indopacific: ["usindopacom", "indo-pacific", "pentagon", "deployment", "exercise", "taiwan", "japan"],
+  okinawa_usfj: ["usfj", "u.s. forces japan", "kadena", "okinawa", "futenma", "camp foster", "marines", "air force"],
+  henoko: ["henoko", "futenma", "okinawa", "relocation", "protest", "landfill"],
+  us_economy: ["u.s. economy", "inflation", "gas prices", "layoffs", "consumer sentiment", "job market"],
+  us_politics_market: ["federal reserve", "congress", "defense budget", "tariffs", "sanctions", "government shutdown", "stock market"],
+  fed_policy: ["federal reserve", "fomc", "powell", "interest rates", "rate cut", "rate hike", "yields"],
+  treasury_fiscal: ["u.s. treasury", "federal debt", "government shutdown", "debt ceiling", "treasury yields", "deficit"],
+  global_energy_shipping: ["oil", "gasoline", "shipping", "red sea", "houthi", "freight", "supply chain"],
+  us_service_prices: ["restaurant prices", "childcare", "babysitting", "rent", "healthcare", "service prices"],
+  corporate_pricing: ["walmart", "target", "costco", "mcdonald", "starbucks", "retail sales", "consumer spending"],
+  defense_budget_pacific: ["defense budget", "pentagon", "pacific deterrence", "indo-pacific command", "okinawa", "guam", "taiwan"],
+  okinawa_operations: ["okinawa", "kadena", "futenma", "camp foster", "camp hansen", "u.s. military", "marines", "exercise", "incident", "training"]
+};
 
 const hits = (text: string, words: string[]) => words.reduce((sum, word) => sum + (text.toLowerCase().match(new RegExp(`\\b${word}\\b`, "g"))?.length ?? 0), 0);
+
+class StopRetryError extends Error {}
+
+function clientId() {
+  const key = "gdeltClientId";
+  const existing = sessionStorage.getItem(key);
+  if (existing) return existing;
+  const value = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  sessionStorage.setItem(key, value);
+  return value;
+}
+
+function acquireGdeltLock() {
+  const owner = clientId();
+  const now = Date.now();
+  try {
+    const raw = localStorage.getItem(lockKey);
+    const lock = raw ? (JSON.parse(raw) as { owner: string; expiresAt: number }) : null;
+    if (lock && lock.expiresAt > now && lock.owner !== owner) return false;
+    localStorage.setItem(lockKey, JSON.stringify({ owner, expiresAt: now + lockTtlMs }));
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+function releaseGdeltLock() {
+  const owner = clientId();
+  try {
+    const raw = localStorage.getItem(lockKey);
+    const lock = raw ? (JSON.parse(raw) as { owner: string; expiresAt: number }) : null;
+    if (lock?.owner === owner) localStorage.removeItem(lockKey);
+  } catch {
+    // Ignore lock cleanup failures.
+  }
+}
 
 export function scoreTopic(topic: NewsTopic, articles: NewsArticle[]) {
   const body = articles.map((a) => `${a.title} ${a.domain ?? ""}`).join(" ");
@@ -50,38 +117,154 @@ export function fallbackGdelt(): TopicScore[] {
   }));
 }
 
-export const getGdeltCache = () => {
+const isEnvelope = (value: unknown): value is GdeltCacheEnvelope => {
+  return typeof value === "object" && value !== null && Array.isArray((value as GdeltCacheEnvelope).data);
+};
+
+function getCacheEnvelope(timespan?: string) {
   try {
     const raw = localStorage.getItem(cacheKey);
-    return raw ? (JSON.parse(raw) as TopicScore[]) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as TopicScore[] | GdeltCacheEnvelope;
+    if (!isEnvelope(parsed) || parsed.version !== 3) return null;
+    if (timespan && parsed.timespan !== timespan) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export const getGdeltCache = (timespan?: string) => {
+  try {
+    const raw = localStorage.getItem(cacheKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as TopicScore[] | GdeltCacheEnvelope;
+    const data = Array.isArray(parsed) ? parsed : parsed.data;
+    const date = isEnvelope(parsed) ? parsed.date : localStorage.getItem("lastUpdated");
+    const cacheTimespan = isEnvelope(parsed) ? parsed.timespan : undefined;
+    if (timespan && cacheTimespan && cacheTimespan !== timespan) return null;
+    if (date && Date.now() - new Date(date).getTime() > cacheTtlMs) {
+      return data.map((item) => ({ ...item, status: "cache" as const }));
+    }
+    return data.map((item) => ({ ...item, status: item.status === "fallback" ? item.status : "cache" as const }));
   } catch {
     return null;
   }
 };
 
+export function gdeltCacheNeedsRefresh(timespan: string) {
+  try {
+    const envelope = getCacheEnvelope(timespan);
+    if (!envelope) return true;
+    const hasNonLive = envelope.data.some((topic) => topic.status !== "live");
+    const attemptedRecently = Date.now() - new Date(envelope.attemptedAt).getTime() < envelope.retryAfterMs;
+    if (hasNonLive && attemptedRecently) return false;
+    if (Date.now() - new Date(envelope.date).getTime() > cacheTtlMs) return true;
+    return hasNonLive;
+  } catch {
+    return true;
+  }
+}
+
+function gdeltUrls(query: string, timespan: string, maxrecords = 50) {
+  const params = new URLSearchParams({ query, timespan, maxrecords: String(maxrecords) });
+  const direct = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&format=json&maxrecords=${maxrecords}&sort=datedesc&timespan=${timespan}&sourcelang=english`;
+  const proxy = `/api/gdelt?${params.toString()}`;
+  return [direct, proxy];
+}
+
+async function fetchArticles(query: string, timespan: string, maxrecords = 50) {
+  let lastError = "unknown";
+  for (const url of gdeltUrls(query, timespan, maxrecords)) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      const contentType = res.headers.get("content-type") ?? "";
+      if (!contentType.includes("json")) {
+        const text = await res.text();
+        if (text.toLowerCase().includes("please limit requests")) throw new StopRetryError("GDELT rate limit: wait before refreshing");
+        throw new Error("GDELT returned non-JSON response");
+      }
+      const json = (await res.json()) as { articles?: NewsArticle[] };
+      return json.articles ?? [];
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "unknown";
+      if (error instanceof StopRetryError) break;
+    }
+  }
+  throw new Error(lastError);
+}
+
+function articleBody(article: NewsArticle) {
+  return `${article.title ?? ""} ${article.domain ?? ""} ${article.url ?? ""}`.toLowerCase();
+}
+
+function articlesForTopic(topic: NewsTopic, articles: NewsArticle[]) {
+  const keywords = topicKeywords[topic.id] ?? [];
+  if (!keywords.length) return articles.slice(0, 12);
+  return articles.filter((article) => {
+    const body = articleBody(article);
+    return keywords.some((keyword) => body.includes(keyword));
+  }).slice(0, 12);
+}
+
+async function fetchBulkTopics(timespan: string): Promise<TopicScore[]> {
+  const articles = await fetchArticles(broadQuery, timespan, 50);
+  return newsTopics.map((topic) => {
+    const topicArticles = articlesForTopic(topic, articles);
+    const scored = scoreTopic(topic, topicArticles);
+    return {
+      id: topic.id,
+      label: topic.label,
+      query: topic.query,
+      scoreRole: topic.scoreRole,
+      articleCount: topicArticles.length,
+      ...scored,
+      status: "live" as const,
+      articles: topicArticles
+    };
+  });
+}
+
 export async function fetchGdelt(timespan: string): Promise<{ data: TopicScore[]; logs: string[] }> {
   const logs: string[] = [];
-  const results = await Promise.all(
-    newsTopics.map(async (topic) => {
-      const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(topic.query)}&mode=artlist&format=json&maxrecords=50&sort=datedesc&timespan=${timespan}&sourcelang=english`;
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-        const json = (await res.json()) as { articles?: NewsArticle[] };
-        const articles = (json.articles ?? []).slice(0, 12);
-        const scored = scoreTopic(topic, articles);
-        return { id: topic.id, label: topic.label, query: topic.query, scoreRole: topic.scoreRole, articleCount: json.articles?.length ?? articles.length, ...scored, status: "live" as const, articles };
-      } catch (error) {
-        logs.push(`${topic.label} GDELT取得失敗: ${error instanceof Error ? error.message : "unknown"}。fallback/キャッシュを使用。`);
-        const cached = getGdeltCache()?.find((c) => c.id === topic.id);
-        if (cached) return { ...cached, status: "cache" as const };
-        return fallbackGdelt().find((f) => f.id === topic.id)!;
-      }
-    })
-  );
-  localStorage.setItem(cacheKey, JSON.stringify(results));
+  const cached = getGdeltCache(timespan);
+  const fallback = fallbackGdelt();
+  const envelope = getCacheEnvelope(timespan);
+  const recentNonLiveAttempt = envelope && envelope.data.some((topic) => topic.status !== "live") && Date.now() - new Date(envelope.attemptedAt).getTime() < envelope.retryAfterMs;
+
+  if (recentNonLiveAttempt) {
+    logs.push("GDELT cooldown active: using cache/fallback to avoid another 429.");
+    logs.push("Wait about 30 minutes after a rate-limit event before refreshing again.");
+    return { data: cached ?? fallback, logs };
+  }
+
+  if (!acquireGdeltLock()) {
+    logs.push("GDELT update skipped: another dashboard tab is already refreshing.");
+    logs.push("Using the current local cache in this tab.");
+    return { data: cached ?? fallback, logs };
+  }
+
+  let results: TopicScore[];
+  try {
+    results = await fetchBulkTopics(timespan);
+    logs.push(`GDELT broad fetch OK: ${results.reduce((sum, topic) => sum + topic.articleCount, 0)} articles classified into ${results.length} topics.`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown";
+    logs.push(`GDELT broad fetch failed: ${message}`);
+    logs.push("GDELT is rate-limited easily. Auto retry is paused for 30 minutes after failure.");
+    results = newsTopics.map((topic) => {
+      const cachedTopic = cached?.find((c) => c.id === topic.id);
+      if (cachedTopic) return { ...cachedTopic, status: "cache" as const };
+      return fallback.find((f) => f.id === topic.id)!;
+    });
+  } finally {
+    releaseGdeltLock();
+  }
+
+  localStorage.setItem(cacheKey, JSON.stringify({ version: 3, date: new Date().toISOString(), timespan, attemptedAt: new Date().toISOString(), retryAfterMs, data: results } satisfies GdeltCacheEnvelope));
   localStorage.setItem("lastUpdated", new Date().toISOString());
-  logs.push(`GDELT更新完了: ${results.filter((r) => r.status === "live").length}/${results.length}トピック`);
+  logs.push(`GDELT update complete: live ${results.filter((r) => r.status === "live").length}/${results.length} topics.`);
   return { data: results, logs };
 }
 
