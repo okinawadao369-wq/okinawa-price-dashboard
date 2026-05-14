@@ -16,6 +16,7 @@ import { StrategicIntelligencePanel } from "./components/StrategicIntelligencePa
 import { MarketDataOpsPanel } from "./components/MarketDataOpsPanel";
 import { LiveFxPanel } from "./components/LiveFxPanel";
 import { BrowserResearchPanel } from "./components/BrowserResearchPanel";
+import { GdeltImpactPanel } from "./components/GdeltImpactPanel";
 import { areas, industries, segments } from "./data/baseData";
 import { fallbackFred, fetchFred, fredValue, fredYoY, getFredCache, type FredPoint } from "./utils/fredClient";
 import { aggregateNews, fallbackGdelt, fetchGdelt, gdeltCacheNeedsRefresh, getGdeltCache, getGdeltCacheMeta, type TopicScore } from "./utils/gdeltClient";
@@ -144,6 +145,7 @@ export default function App() {
         </div>
         <TradingViewFxPanel />
         <StrategicIntelligencePanel intelligence={strategicIntelligence} />
+        <GdeltImpactPanel scores={newsScores} />
         <MarketDataOpsPanel ops={marketDataOps} />
         <BrowserResearchPanel rssIntel={rssIntel} />
         <PricingSimulator industries={industries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={setSelectedFx} />

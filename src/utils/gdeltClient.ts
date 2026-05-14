@@ -181,7 +181,7 @@ function gdeltUrls(query: string, timespan: string, maxrecords = 50) {
   const params = new URLSearchParams({ query, timespan, maxrecords: String(maxrecords) });
   const direct = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&format=json&maxrecords=${maxrecords}&sort=datedesc&timespan=${timespan}&sourcelang=english`;
   const proxy = `/api/gdelt?${params.toString()}`;
-  return [direct, proxy];
+  return [proxy, direct];
 }
 
 async function fetchArticles(query: string, timespan: string, maxrecords = 50) {
@@ -220,7 +220,7 @@ function articlesForTopic(topic: NewsTopic, articles: NewsArticle[]) {
 }
 
 async function fetchBulkTopics(timespan: string): Promise<TopicScore[]> {
-  const articles = await fetchArticles(broadQuery, timespan, 50);
+  const articles = await fetchArticles(broadQuery, timespan, 150);
   return newsTopics.map((topic) => {
     const topicArticles = articlesForTopic(topic, articles);
     const scored = scoreTopic(topic, topicArticles);
