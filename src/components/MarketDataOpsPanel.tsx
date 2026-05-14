@@ -12,8 +12,8 @@ export function MarketDataOpsPanel({ ops }: { ops: MarketDataOps }) {
         <div>
           <h2>自動監視データ収集・米国ミクロ価格インテリジェンス</h2>
           <p className="scenario">
-            米政府、FRB/FRED、BLS、BEA、EIA、Treasury、国際機関、マスコミ、企業価格ニュースを、日次更新できるものから順に数値化します。
-            取得できない企業個別価格は、推計モデルまたは手動確認として明示します。
+            米政府、FRB/FRED、BLS、BEA、EIA、Treasury、国際機関、報道、市場、企業価格ニュースを、取得可能性とデータ品質を分けて数値化します。
+            企業個別価格やライセンス性の強い市場データは、推計または手動確認として明示します。
           </p>
         </div>
         <div className="impact-card">

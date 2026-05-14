@@ -40,18 +40,23 @@ export const getFredCache = () => {
 export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ data: FredPoint[]; logs: string[] }> {
   const key = (apiKey || inlineKey || "").trim();
   const logs: string[] = [];
+  const cached = getFredCache();
+
   const results = await Promise.all(
     fredSeries.map(async (series) => {
       const url = key
         ? `https://api.stlouisfed.org/fred/series/observations?series_id=${series.id}&api_key=${encodeURIComponent(key)}&file_type=json&sort_order=desc&limit=420`
         : `/api/fred?series_id=${encodeURIComponent(series.id)}`;
+
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+
         const json = (await res.json()) as { observations: FredObservation[] };
         const observations = json.observations.filter((o) => o.value !== "." && Number.isFinite(Number(o.value)));
         const latest = observations[0];
         if (!latest) throw new Error("no numeric observations");
+
         let yoy: number | undefined;
         if (series.yoy) {
           const latestDate = new Date(latest.date);
@@ -62,16 +67,43 @@ export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ 
           });
           if (prior) yoy = ((Number(latest.value) - Number(prior.value)) / Number(prior.value)) * 100;
         }
-        return { id: series.id, label: series.label, value: Number(latest.value), date: latest.date, yoy, status: "live" as const, meaning: series.meaning, unit: series.unit };
+
+        return {
+          id: series.id,
+          label: series.label,
+          value: Number(latest.value),
+          date: latest.date,
+          yoy,
+          status: "live" as const,
+          meaning: series.meaning,
+          unit: series.unit
+        };
       } catch (error) {
-        logs.push(`${series.id}取得失敗: ${error instanceof Error ? error.message : "unknown"}。fallback値を使用。`);
-        return { id: series.id, label: series.label, value: series.fallback, date: "fallback", yoy: series.yoy ? 3.1 : undefined, status: "fallback" as const, meaning: series.meaning, unit: series.unit };
+        const message = error instanceof Error ? error.message : "unknown";
+        const cachedPoint = cached?.find((point) => point.id === series.id);
+        if (cachedPoint) {
+          logs.push(`${series.id} FRED取得失敗: ${message}。前回キャッシュを使用。`);
+          return { ...cachedPoint, status: "cache" as const };
+        }
+
+        logs.push(`${series.id} FRED取得失敗: ${message}。fallback値を使用。`);
+        return {
+          id: series.id,
+          label: series.label,
+          value: series.fallback,
+          date: "fallback",
+          yoy: series.yoy ? 3.1 : undefined,
+          status: "fallback" as const,
+          meaning: series.meaning,
+          unit: series.unit
+        };
       }
     })
   );
+
   localStorage.setItem(cacheKey, JSON.stringify(results));
   localStorage.setItem("lastUpdated", new Date().toISOString());
-  logs.push(`FRED更新完了: ${results.filter((r) => r.status === "live").length}/${results.length}系列`);
+  logs.push(`FRED更新完了: ライブ ${results.filter((r) => r.status === "live").length}/${results.length} 系列`);
   return { data: results, logs };
 }
 

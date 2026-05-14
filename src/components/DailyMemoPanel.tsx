@@ -6,7 +6,10 @@ export function DailyMemoPanel({ fredData, newsScores, marketTemperature }: { fr
   const fx = fredValue(fredData, "DEXJPUS", 156);
   const cpi = fredYoY(fredData, "CPIAUCSL", 3.1);
   const stress = news.consumerStress;
+  const liveTopics = newsScores.filter((score) => score.status === "live").length;
+  const dataMode = liveTopics === newsScores.length ? "GDELT live" : liveTopics > 0 ? `GDELT partial live ${liveTopics}/${newsScores.length}` : "GDELT cache/fallback";
   const memo = `【自動分析メモ】
+データ状態: FRED=${fredData.filter((point) => point.status === "live").length}/${fredData.length} live、${dataMode}。GDELTがcache/fallbackの場合、地政学・ニュース系スコアは前回取得値または代替スコアとして扱う。
 地政学リスク：${Math.round(news.geoRisk)} / 東アジア緊張：${Math.round(news.eastAsiaTension)} / 米軍前方展開：${Math.round(news.forwardPosture)} / 沖縄基地関連：${Math.round(news.okinawaBase)} / 米国消費ストレス：${Math.round(stress)}
 USD/JPY=${fx.toFixed(1)}、CPI YoY=${cpi.toFixed(1)}%、購買市場温度=${marketTemperature}。
 

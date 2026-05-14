@@ -152,6 +152,17 @@ export const getGdeltCache = (timespan?: string) => {
   }
 };
 
+export function getGdeltCacheMeta(timespan?: string) {
+  const envelope = getCacheEnvelope(timespan);
+  if (!envelope) return null;
+  return {
+    date: envelope.date,
+    attemptedAt: envelope.attemptedAt,
+    retryAfterMs: envelope.retryAfterMs,
+    retryUntil: new Date(new Date(envelope.attemptedAt).getTime() + envelope.retryAfterMs).toISOString()
+  };
+}
+
 export function gdeltCacheNeedsRefresh(timespan: string) {
   try {
     const envelope = getCacheEnvelope(timespan);

@@ -12,6 +12,10 @@
       "destination": "/api/gdelt"
     },
     {
+      "source": "/api/exchange-rate",
+      "destination": "/api/exchange-rate"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -23,17 +23,17 @@ export type SectorPriceBenchmark = {
 };
 
 export const monitoringSources: MonitoringSource[] = [
-  { id: "fred", category: "FRB/FRED", source: "FRED API", url: "https://fred.stlouisfed.org/docs/api/fred/series_observations.html", updateCadence: "日次/系列ごと", status: "自動API", quality: "observed", dashboardUse: "USD/JPY、CPI、雇用、賃金、金利、消費者心理を市場温度へ反映" },
-  { id: "gdelt", category: "国際ニュース", source: "GDELT DOC 2.0", url: "https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/", updateCadence: "開いた時点で1d/2d/3d/7d検索", status: "ニュース検索", quality: "observed", dashboardUse: "戦争・政治・基地・米国経済ニュースをスコア化" },
+  { id: "fred", category: "FRB/FRED", source: "FRED API", url: "https://fred.stlouisfed.org/docs/api/fred/series_observations.html", updateCadence: "日次または系列ごと", status: "自動API", quality: "observed", dashboardUse: "USD/JPY、CPI、雇用、賃金、金利、消費者心理を市場温度へ反映" },
+  { id: "gdelt", category: "国際ニュース", source: "GDELT DOC 2.0", url: "https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/", updateCadence: "起動時または手動更新で1d/2d/3d/7d検索", status: "ニュース検索", quality: "observed", dashboardUse: "戦争、政治、基地、米国経済ニュースをスコア化。レート制限時はcache/fallbackを明示" },
   { id: "bls", category: "米政府/物価", source: "BLS Public Data API", url: "https://www.bls.gov/developers/api_signature_v2.htm", updateCadence: "月次/リリース時", status: "自動API", quality: "observed", dashboardUse: "CPI/PPI/雇用/賃金を企業分野別価格圧力へ接続" },
-  { id: "bea", category: "米政府/景気", source: "BEA API", url: "https://www.bea.gov/tools", updateCadence: "月次/四半期", status: "自動API", quality: "observed", dashboardUse: "GDP、個人所得、消費支出から米国家計の余力を確認" },
-  { id: "eia", category: "米政府/エネルギー", source: "EIA API", url: "https://www.eia.gov/opendata/documentation.php", updateCadence: "週次/日次系列あり", status: "自動API", quality: "observed", dashboardUse: "ガソリン・原油・電力コストを外食/移動/生活サービス価格へ反映" },
+  { id: "bea", category: "米政府/景気", source: "BEA API", url: "https://www.bea.gov/tools", updateCadence: "月次/四半期", status: "自動API", quality: "observed", dashboardUse: "GDP、個人所得、個人消費支出から米国家計の余力を確認" },
+  { id: "eia", category: "米政府/エネルギー", source: "EIA API", url: "https://www.eia.gov/opendata/documentation.php", updateCadence: "週次/一部日次", status: "自動API", quality: "observed", dashboardUse: "ガソリン、原油、電力コストを外食/移動/生活サービス価格へ反映" },
   { id: "treasury", category: "米政府/財政金融", source: "U.S. Treasury Fiscal Data API", url: "https://fiscaldata.treasury.gov/api-documentation/", updateCadence: "日次/月次", status: "自動API", quality: "observed", dashboardUse: "米財政、国債、利払い、為替参照を市場リスクへ反映" },
   { id: "usaspend", category: "米政府/支出", source: "USAspending API", url: "https://api.usaspending.gov/docs/", updateCadence: "日次/随時", status: "自動API", quality: "observed", dashboardUse: "国防・地域別支出の強弱を米軍関連需要の補助指標にする" },
-  { id: "dod_budget", category: "米国防", source: "DoD Comptroller Budget Materials", url: "https://comptroller.defense.gov/Budget-Materials/Budget2026/", updateCadence: "予算発表/議会審議時", status: "ニュース検索", quality: "observed", dashboardUse: "国防予算・太平洋抑止・人件費の方向性を米軍商圏持続性へ反映" },
+  { id: "dod_budget", category: "米国防", source: "DoD Comptroller Budget Materials", url: "https://comptroller.defense.gov/Budget-Materials/Budget2026/", updateCadence: "予算発表/議会審議時", status: "ニュース検索", quality: "observed", dashboardUse: "国防予算、太平洋抑止、人件費の方向性を米軍商圏持続性へ反映" },
   { id: "worldbank", category: "国際機関", source: "World Bank Indicators API", url: "https://datahelpdesk.worldbank.org/knowledgebase/articles/889392-about-the-indicators-api-documentation", updateCadence: "月次/年次", status: "自動API", quality: "observed", dashboardUse: "世界経済、貿易、エネルギー、所得環境の背景指標" },
   { id: "media", category: "報道/市場", source: "Al Jazeera / Bloomberg / Reuters等", url: "https://www.aljazeera.com/asia/", updateCadence: "随時", status: "ニュース検索", quality: "estimated", dashboardUse: "速報性のある政治・戦争・為替・市場心理をGDELT検索で代理取得" },
-  { id: "licensed_market", category: "市場/為替", source: "Bloomberg Currencies / TradingView", url: "https://www.bloomberg.com/jp/markets/currencies", updateCadence: "リアルタイム", status: "手動/ライセンス", quality: "estimated", dashboardUse: "表示・確認用。計算値はFRED/手入力USDJPYを優先" }
+  { id: "licensed_market", category: "市場/為替", source: "Bloomberg Currencies / TradingView", url: "https://www.bloomberg.com/jp/markets/currencies", updateCadence: "リアルタイム", status: "手動/ライセンス", quality: "estimated", dashboardUse: "表示・確認用。計算値は公開API、FRED、手入力USD/JPYを優先" }
 ];
 
 export const sectorPriceBenchmarks: SectorPriceBenchmark[] = [
