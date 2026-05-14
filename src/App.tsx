@@ -15,6 +15,7 @@ import { TradingViewFxPanel } from "./components/TradingViewFxPanel";
 import { StrategicIntelligencePanel } from "./components/StrategicIntelligencePanel";
 import { MarketDataOpsPanel } from "./components/MarketDataOpsPanel";
 import { LiveFxPanel } from "./components/LiveFxPanel";
+import { BrowserResearchPanel } from "./components/BrowserResearchPanel";
 import { areas, industries, segments } from "./data/baseData";
 import { fallbackFred, fetchFred, fredValue, fredYoY, getFredCache, type FredPoint } from "./utils/fredClient";
 import { aggregateNews, fallbackGdelt, fetchGdelt, gdeltCacheNeedsRefresh, getGdeltCache, getGdeltCacheMeta, type TopicScore } from "./utils/gdeltClient";
@@ -22,6 +23,7 @@ import { calculatePurchaseScore, computeMarketTemperature, recommendedRange } fr
 import { computeStrategicIntelligence } from "./utils/strategicEngine";
 import { computeMarketDataOps } from "./utils/marketIntelligenceEngine";
 import { fallbackExchangeRate, fetchExchangeRate, getExchangeRateCache, type ExchangeRatePoint } from "./utils/exchangeRateClient";
+import { fallbackRssIntel, fetchRssIntel, getRssIntelCache, type RssIntelResult } from "./utils/rssIntelClient";
 
 const envFredKey = import.meta.env.VITE_FRED_API_KEY as string | undefined;
 
@@ -42,6 +44,7 @@ export default function App() {
   const [logs, setLogs] = useState<string[]>([]);
   const [fredInlineKey, setFredInlineKey] = useState("");
   const [liveFxRate, setLiveFxRate] = useState<ExchangeRatePoint>(() => getExchangeRateCache() ?? fallbackExchangeRate());
+  const [rssIntel, setRssIntel] = useState<RssIntelResult>(() => getRssIntelCache() ?? fallbackRssIntel());
 
   const selectedIndustry = industries.find((i) => i.id === selectedIndustryId) ?? industries[1];
   const selectedSegment = segments.find((s) => s.id === selectedSegmentId) ?? segments[1];
@@ -101,12 +104,13 @@ export default function App() {
     setLoading(true);
     const stamp = new Date().toLocaleString("ja-JP");
     setLogs((old) => [`${stamp} 更新開始`, ...old].slice(0, 20));
-    const [fred, gdelt, fxRate] = await Promise.all([fetchFred(envFredKey, fredInlineKey), fetchGdelt(selectedTimespan), fetchExchangeRate()]);
+    const [fred, gdelt, fxRate, rss] = await Promise.all([fetchFred(envFredKey, fredInlineKey), fetchGdelt(selectedTimespan), fetchExchangeRate(), fetchRssIntel()]);
     setFredData(fred.data);
     setNewsScores(gdelt.data);
     setLiveFxRate(fxRate.data);
+    setRssIntel(rss.data);
     setSelectedFx(Number(fxRate.data.value.toFixed(2)));
-    setLogs((old) => [`${stamp} 更新完了`, ...fxRate.logs, ...fred.logs, ...gdelt.logs, ...old].slice(0, 30));
+    setLogs((old) => [`${stamp} 更新完了`, ...rss.logs, ...fxRate.logs, ...fred.logs, ...gdelt.logs, ...old].slice(0, 30));
     setLoading(false);
   }, [fredInlineKey, selectedTimespan]);
 
@@ -141,6 +145,7 @@ export default function App() {
         <TradingViewFxPanel />
         <StrategicIntelligencePanel intelligence={strategicIntelligence} />
         <MarketDataOpsPanel ops={marketDataOps} />
+        <BrowserResearchPanel rssIntel={rssIntel} />
         <PricingSimulator industries={industries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={setSelectedFx} />
         <div className="grid-2">
           <GeoNewsPanel scores={newsScores} />

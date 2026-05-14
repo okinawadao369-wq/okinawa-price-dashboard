@@ -16,6 +16,10 @@
       "destination": "/api/exchange-rate"
     },
     {
+      "source": "/api/rss-intel",
+      "destination": "/api/rss-intel"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
