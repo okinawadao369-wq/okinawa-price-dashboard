@@ -22,7 +22,7 @@ export type TopicScore = {
 };
 
 type GdeltCacheEnvelope = {
-  version: 3;
+  version: 4;
   date: string;
   timespan: string;
   attemptedAt: string;
@@ -30,14 +30,14 @@ type GdeltCacheEnvelope = {
   data: TopicScore[];
 };
 
-const riskWords = ["missile", "nuclear", "war", "attack", "drill", "exercise", "deployment", "blockade", "invasion", "sanction", "tariff", "inflation", "layoff", "shutdown", "protest", "incident", "warning", "crisis", "tension", "military", "budget"];
+const riskWords = ["missile", "nuclear", "war", "attack", "drill", "exercise", "deployment", "blockade", "invasion", "sanction", "tariff", "inflation", "layoff", "shutdown", "protest", "incident", "warning", "crisis", "tension", "military", "budget", "deterrence", "readiness", "headquarters", "command", "interoperability", "alliance", "littoral", "stand-in"];
 const positiveWords = ["agreement", "dialogue", "cooperation", "stable", "growth", "cooling", "decline", "easing", "peace", "support"];
 const cacheKey = "gdeltNewsCache";
 const lockKey = "gdeltFetchLock";
 const cacheTtlMs = 24 * 60 * 60 * 1000;
 const retryAfterMs = 30 * 60 * 1000;
 const lockTtlMs = 2 * 60 * 1000;
-const broadQuery = '(Taiwan OR "North Korea" OR DPRK OR USINDOPACOM OR "Indo-Pacific" OR Okinawa OR Kadena OR Futenma OR Henoko OR "Federal Reserve" OR FOMC OR "U.S. economy" OR inflation OR "gas prices" OR "government shutdown" OR "defense budget" OR oil OR shipping OR childcare OR "restaurant prices" OR Walmart OR Target OR Costco OR Starbucks OR McDonald\'s)';
+const broadQuery = '(Taiwan OR "North Korea" OR DPRK OR USINDOPACOM OR "Indo-Pacific" OR Okinawa OR Kadena OR Futenma OR Henoko OR "U.S. Forces Japan" OR USFJ OR "Joint Force Headquarters" OR "Marine Littoral Regiment" OR "12th MLR" OR "first island chain" OR "Pacific Deterrence Initiative" OR "Federal Reserve" OR FOMC OR "U.S. economy" OR inflation OR "gas prices" OR "government shutdown" OR "defense budget" OR oil OR shipping OR childcare OR "restaurant prices" OR Walmart OR Target OR Costco OR Starbucks OR McDonald\'s)';
 
 const topicKeywords: Record<string, string[]> = {
   taiwan: ["taiwan", "taiwan strait", "china", "pla", "blockade", "invasion", "warship"],
@@ -53,7 +53,9 @@ const topicKeywords: Record<string, string[]> = {
   us_service_prices: ["restaurant prices", "childcare", "babysitting", "rent", "healthcare", "service prices"],
   corporate_pricing: ["walmart", "target", "costco", "mcdonald", "starbucks", "retail sales", "consumer spending"],
   defense_budget_pacific: ["defense budget", "pentagon", "pacific deterrence", "indo-pacific command", "okinawa", "guam", "taiwan"],
-  okinawa_operations: ["okinawa", "kadena", "futenma", "camp foster", "camp hansen", "u.s. military", "marines", "exercise", "incident", "training"]
+  okinawa_operations: ["okinawa", "kadena", "futenma", "camp foster", "camp hansen", "u.s. military", "marines", "exercise", "incident", "training"],
+  us_japan_command: ["u.s. forces japan", "usfj", "joint force headquarters", "japan self-defense forces", "jsdf", "command", "integration", "interoperability", "alliance", "headquarters"],
+  first_island_chain: ["marine littoral regiment", "12th mlr", "first island chain", "stand-in force", "camp hansen", "camp schwab", "okinawa", "taiwan", "exercise"]
 };
 
 const hits = (text: string, words: string[]) => words.reduce((sum, word) => sum + (text.toLowerCase().match(new RegExp(`\\b${word}\\b`, "g"))?.length ?? 0), 0);
@@ -126,7 +128,7 @@ function getCacheEnvelope(timespan?: string) {
     const raw = localStorage.getItem(cacheKey);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as TopicScore[] | GdeltCacheEnvelope;
-    if (!isEnvelope(parsed) || parsed.version !== 3) return null;
+    if (!isEnvelope(parsed) || parsed.version !== 4) return null;
     if (timespan && parsed.timespan !== timespan) return null;
     return parsed;
   } catch {
@@ -273,7 +275,7 @@ export async function fetchGdelt(timespan: string): Promise<{ data: TopicScore[]
     releaseGdeltLock();
   }
 
-  localStorage.setItem(cacheKey, JSON.stringify({ version: 3, date: new Date().toISOString(), timespan, attemptedAt: new Date().toISOString(), retryAfterMs, data: results } satisfies GdeltCacheEnvelope));
+  localStorage.setItem(cacheKey, JSON.stringify({ version: 4, date: new Date().toISOString(), timespan, attemptedAt: new Date().toISOString(), retryAfterMs, data: results } satisfies GdeltCacheEnvelope));
   localStorage.setItem("lastUpdated", new Date().toISOString());
   logs.push(`GDELT update complete: live ${results.filter((r) => r.status === "live").length}/${results.length} topics.`);
   return { data: results, logs };

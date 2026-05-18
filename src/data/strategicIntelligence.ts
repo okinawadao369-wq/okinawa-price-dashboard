@@ -60,6 +60,48 @@ export const strategicFactors: StrategicFactor[] = [
     ]
   },
   {
+    id: "defense_budget_pdi",
+    label: "米国防予算・Pacific Deterrence Initiative",
+    category: "米国防予算",
+    baseScore: 82,
+    priceImpact: 3.1,
+    direction: "需要押上げ",
+    rationale: "FY2026国防予算資料では太平洋抑止、即応性、軍事インフラ、装備近代化が重点化され、インド太平洋の前方展開を財政面から支える構図。",
+    pricePsychology: "沖縄の基地機能が一時的需要ではなく、制度予算に裏付けられた継続需要として見えやすくなる。",
+    sources: [
+      { label: "DoD Comptroller: FY2026 Budget Materials", url: "https://comptroller.defense.gov/Budget-Materials/", kind: "official" },
+      { label: "DoD FY2026 Pacific Deterrence Initiative", url: "https://comptroller.defense.gov/Portals/45/Documents/defbudget/FY2026/FY2026_Pacific_Deterrence_Initiative.pdf", kind: "official" }
+    ]
+  },
+  {
+    id: "okinawa_community_stability",
+    label: "沖縄コミュニティ連携・秩序維持",
+    category: "沖縄関係",
+    baseScore: 68,
+    priceImpact: 1.2,
+    direction: "混合",
+    rationale: "USFJと沖縄側の連携フォーラム、共同パトロール、安全対話は摩擦リスクを下げる一方、事件事故や基地政治が注目される局面では広告表現に慎重さが必要。",
+    pricePsychology: "地域摩擦を避け、家族・安心・英語対応・信頼を前面に出すほど、米軍家族向けサービスの価格許容を守りやすい。",
+    sources: [
+      { label: "USFJ: Okinawa Community Partnership Forum", url: "https://www.usfj.mil/Media/Press-Releases/Article-View/Article/4168452/new-forum-to-enhance-us-japan-cooperation-in-okinawa/", kind: "official" },
+      { label: "USFJ: Joint Patrols in Okinawa City", url: "https://www.usfj.mil/Media/Press-Releases/Article-View/Article/4151092/us-forces-local-police-conduct-joint-patrol-with-residents-in-okinawa-city/", kind: "official" }
+    ]
+  },
+  {
+    id: "mearsheimer_geography",
+    label: "ミアシャイマー型・大国政治/水の停止力モデル",
+    category: "地政学モデル",
+    baseScore: 74,
+    priceImpact: 2.4,
+    direction: "需要押上げ",
+    rationale: "大国は相対的安全保障を追求し、海洋・島嶼・第一列島線はパワープロジェクションと抑止の要衝になる、という構造リアリズム的な読み。",
+    pricePsychology: "沖縄は単なる観光地ではなく、米軍家族・軍属・DoD civilianの生活拠点として残りやすいという中長期商圏仮説を強める。",
+    sources: [
+      { label: "Model: Offensive realism / Mearsheimer theory", url: "https://www.britannica.com/biography/John-Mearsheimer", kind: "model" },
+      { label: "Defense Priorities: Grand strategy and geography", url: "https://www.defensepriorities.org/explainers/grand-strategy-geography/", kind: "model" }
+    ]
+  },
+  {
     id: "taiwan_east_asia",
     label: "台湾海峡・東アジア緊張",
     category: "国際政治",

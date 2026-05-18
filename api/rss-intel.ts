@@ -12,6 +12,12 @@ const rssSources = [
     weight: 1.05
   },
   {
+    id: "dod_news",
+    label: "DoD / War.gov official news RSS",
+    url: "https://www.war.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=20",
+    weight: 1.25
+  },
+  {
     id: "aljazeera",
     label: "Al Jazeera global RSS",
     url: "https://www.aljazeera.com/xml/rss/all.xml",
@@ -21,7 +27,8 @@ const rssSources = [
 
 const riskWords = [
   "war", "attack", "missile", "nuclear", "invasion", "blockade", "sanction", "tariff", "inflation",
-  "shutdown", "layoff", "crisis", "tension", "military", "budget", "fomc", "rate", "rates", "fed"
+  "shutdown", "layoff", "crisis", "tension", "military", "budget", "fomc", "rate", "rates", "fed",
+  "deployment", "exercise", "readiness", "carrier", "command", "indo-pacific", "allies", "deterrence"
 ];
 const positiveWords = ["agreement", "dialogue", "cooperation", "stable", "growth", "cooling", "decline", "easing", "peace", "support"];
 

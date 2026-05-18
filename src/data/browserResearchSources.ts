@@ -115,6 +115,39 @@ export const browserResearchSources: BrowserResearchSource[] = [
     note: "多媒体横断検索。レート制限時はcache/fallback表示に切り替える。"
   },
   {
+    id: "dod_rss",
+    name: "DoD / War.gov official RSS",
+    method: "official_rss",
+    url: "https://www.war.gov/News/RSS/index.html/",
+    cadence: "随時",
+    quality: "observed",
+    canAutoCollect: true,
+    dashboardMetric: "米軍作戦・同盟・即応性・装備/予算ニュース",
+    note: "公式RSSから見出しを取得し、軍関連リスク/前方展開スコアの補助信号にする。"
+  },
+  {
+    id: "usfj_official",
+    name: "U.S. Forces Japan official site",
+    method: "gdelt_search",
+    url: "https://www.usfj.mil/",
+    cadence: "随時",
+    quality: "observed",
+    canAutoCollect: true,
+    dashboardMetric: "USFJ再編・沖縄関係・共同訓練/共同パトロール",
+    note: "公式サイトはGDELT/RSS補助と手動確認を組み合わせ、沖縄基地関連指数に反映する。"
+  },
+  {
+    id: "mlr_official",
+    name: "12th Marine Littoral Regiment official site",
+    method: "gdelt_search",
+    url: "https://www.12thmlr.marines.mil/",
+    cadence: "随時",
+    quality: "observed",
+    canAutoCollect: true,
+    dashboardMetric: "第一列島線・12th MLR・沖縄前方展開",
+    note: "沖縄の軍編成機能を読む重要ソース。価格心理では基地経済の継続性に反映する。"
+  },
+  {
     id: "bloomberg_tradingview",
     name: "Bloomberg / TradingView",
     method: "licensed_manual",
