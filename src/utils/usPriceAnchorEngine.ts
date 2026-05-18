@@ -12,13 +12,20 @@ export type UsAnchorPulse = {
 };
 
 function sectorFor(item: Industry) {
-  if (item.group.includes("飲食") || item.id.includes("lunch") || item.id.includes("dinner") || item.id.includes("cafe")) return "food_service";
+  const foodServiceIds = new Set(["cafe_latte", "casual_lunch", "family_dinner", "premium_dining"]);
+  const maternityHealthIds = new Set(["ft_2d", "ft_4d", "baby_keepsake", "baby_maternity_retail"]);
+  const personalServiceIds = new Set(["hair_color_women", "massage_60", "acupuncture"]);
+  const localServiceIds = new Set(["house_cleaning", "car_detail", "pet_sitting", "translation_admin"]);
+  const experiencePhotoIds = new Set(["family_photo", "mini_photo", "tour_activity"]);
+
+  // Use stable industry IDs, not localized labels, so data corrections survive UI translation and encoding changes.
+  if (foodServiceIds.has(item.id)) return "food_service";
   if (item.id.includes("sitter")) return "childcare_care";
-  if (item.id.includes("ft_2d") || item.id.includes("ft_4d") || item.id.includes("maternity") || item.id.includes("baby")) return "maternity_health";
-  if (item.group.includes("美容") || item.id.includes("massage") || item.id.includes("acupuncture") || item.id.includes("hair")) return "personal_services";
-  if (item.group.includes("生活") || item.id.includes("cleaning") || item.id.includes("translation") || item.id.includes("pet")) return "local_services";
-  if (item.group.includes("写真") || item.id.includes("photo") || item.id.includes("tour")) return "experience_photo";
-  if (item.group.includes("教育") || item.id.includes("lesson")) return "education";
+  if (maternityHealthIds.has(item.id)) return "maternity_health";
+  if (personalServiceIds.has(item.id)) return "personal_services";
+  if (localServiceIds.has(item.id)) return "local_services";
+  if (experiencePhotoIds.has(item.id)) return "experience_photo";
+  if (item.id === "language_lesson") return "education";
   return "general";
 }
 
