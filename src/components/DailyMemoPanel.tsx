@@ -1,9 +1,9 @@
 import { FredPoint, fredValue, fredYoY } from "../utils/fredClient";
 import { NewsArticle, TopicScore, aggregateNews } from "../utils/gdeltClient";
 
-export function DailyMemoPanel({ fredData, newsScores, marketTemperature }: { fredData: FredPoint[]; newsScores: TopicScore[]; marketTemperature: number }) {
+export function DailyMemoPanel({ fredData, newsScores, marketTemperature, fxOverride }: { fredData: FredPoint[]; newsScores: TopicScore[]; marketTemperature: number; fxOverride?: number }) {
   const news = aggregateNews(newsScores);
-  const fx = fredValue(fredData, "DEXJPUS", 156);
+  const fx = fxOverride ?? fredValue(fredData, "DEXJPUS", 156);
   const cpi = fredYoY(fredData, "CPIAUCSL", 3.1);
   const stress = news.consumerStress;
   const liveTopics = newsScores.filter((score) => score.status === "live").length;

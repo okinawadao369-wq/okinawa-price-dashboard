@@ -46,6 +46,7 @@ export default function App() {
   const [fredInlineKey, setFredInlineKey] = useState("");
   const [liveFxRate, setLiveFxRate] = useState<ExchangeRatePoint>(() => getExchangeRateCache() ?? fallbackExchangeRate());
   const [rssIntel, setRssIntel] = useState<RssIntelResult>(() => getRssIntelCache() ?? fallbackRssIntel());
+  const [manualFxOverride, setManualFxOverride] = useState(false);
 
   const selectedIndustry = industries.find((i) => i.id === selectedIndustryId) ?? industries[1];
   const selectedSegment = segments.find((s) => s.id === selectedSegmentId) ?? segments[1];
@@ -84,7 +85,8 @@ export default function App() {
     };
   }, [fredData, newsScores, selectedTimespan]);
   const cpiYoY = fredYoY(fredData, "CPIAUCSL", 3.1);
-  const fx = selectedFx || liveFxRate.value || fredValue(fredData, "DEXJPUS", 156);
+  const fredFx = fredValue(fredData, "DEXJPUS", 156);
+  const fx = manualFxOverride && selectedFx ? selectedFx : liveFxRate.quality === "observed" ? liveFxRate.value : selectedFx || fredFx;
   const strategicIntelligence = useMemo(() => computeStrategicIntelligence(fredData, newsScores, fx), [fredData, newsScores, fx]);
   const marketDataOps = useMemo(() => computeMarketDataOps(fredData, newsScores, fx), [fredData, newsScores, fx]);
   const marketTemperature = computeMarketTemperature({
@@ -111,6 +113,7 @@ export default function App() {
     setLiveFxRate(fxRate.data);
     setRssIntel(rss.data);
     setSelectedFx(Number(fxRate.data.value.toFixed(2)));
+    setManualFxOverride(false);
     setLogs((old) => [`${stamp} 更新完了`, ...rss.logs, ...fxRate.logs, ...fred.logs, ...gdelt.logs, ...old].slice(0, 30));
     setLoading(false);
   }, [fredInlineKey, selectedTimespan]);
@@ -138,7 +141,7 @@ export default function App() {
       <Header sourceStatus={sourceStatus} />
       <main className="dashboard-main">
         <KpiCards fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} />
-        <LiveFxPanel fxRate={liveFxRate} fredFx={fredValue(fredData, "DEXJPUS", fx)} />
+        <LiveFxPanel fxRate={liveFxRate} fredFx={fredFx} />
         <div className="grid-2">
           <AiConsultantPanel item={selectedIndustry} segment={selectedSegment} area={selectedArea} priceJPY={price} fx={fx} range={range} score={score} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} />
           <UpdateControls autoUpdate={autoUpdate} setAutoUpdate={setAutoUpdate} timespan={selectedTimespan} setTimespan={setSelectedTimespan} onRefresh={refreshAll} loading={loading} logs={logs} fredInlineKey={fredInlineKey} setFredInlineKey={setFredInlineKey} sourceStatus={sourceStatus} />
@@ -148,10 +151,10 @@ export default function App() {
         <GdeltImpactPanel scores={newsScores} />
         <MarketDataOpsPanel ops={marketDataOps} />
         <BrowserResearchPanel rssIntel={rssIntel} />
-        <PricingSimulator industries={industries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={setSelectedFx} />
+        <PricingSimulator industries={industries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={(value) => { setManualFxOverride(true); setSelectedFx(value); }} />
         <div className="grid-2">
           <GeoNewsPanel scores={newsScores} />
-          <DailyMemoPanel fredData={fredData} newsScores={newsScores} marketTemperature={marketTemperature} />
+          <DailyMemoPanel fredData={fredData} newsScores={newsScores} marketTemperature={marketTemperature} fxOverride={fx} />
         </div>
         <div className="grid-2">
           <FredDataPanel data={fredData} />
