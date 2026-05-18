@@ -21,6 +21,11 @@ export type Industry = {
   industry: string;
   usLow: number;
   usHigh: number;
+  usLowBase?: number;
+  usHighBase?: number;
+  usPriceAdjustment?: number;
+  usPriceSignal?: string;
+  usPriceQuality?: "observed" | "estimated" | "fallback" | "unknown";
   okinawaCurrent: number;
   unit: string;
   discount: number;

@@ -17,6 +17,7 @@ import { MarketDataOpsPanel } from "./components/MarketDataOpsPanel";
 import { LiveFxPanel } from "./components/LiveFxPanel";
 import { BrowserResearchPanel } from "./components/BrowserResearchPanel";
 import { GdeltImpactPanel } from "./components/GdeltImpactPanel";
+import { UsPriceAnchorPanel } from "./components/UsPriceAnchorPanel";
 import { areas, industries, segments } from "./data/baseData";
 import { fallbackFred, fetchFred, fredValue, fredYoY, getFredCache, type FredPoint } from "./utils/fredClient";
 import { aggregateNews, fallbackGdelt, fetchGdelt, gdeltCacheNeedsRefresh, getGdeltCache, getGdeltCacheMeta, type TopicScore } from "./utils/gdeltClient";
@@ -25,6 +26,7 @@ import { computeStrategicIntelligence } from "./utils/strategicEngine";
 import { computeMarketDataOps } from "./utils/marketIntelligenceEngine";
 import { fallbackExchangeRate, fetchExchangeRate, getExchangeRateCache, type ExchangeRatePoint } from "./utils/exchangeRateClient";
 import { fallbackRssIntel, fetchRssIntel, getRssIntelCache, type RssIntelResult } from "./utils/rssIntelClient";
+import { adjustIndustryUsAnchors } from "./utils/usPriceAnchorEngine";
 
 const envFredKey = import.meta.env.VITE_FRED_API_KEY as string | undefined;
 
@@ -48,7 +50,8 @@ export default function App() {
   const [rssIntel, setRssIntel] = useState<RssIntelResult>(() => getRssIntelCache() ?? fallbackRssIntel());
   const [manualFxOverride, setManualFxOverride] = useState(false);
 
-  const selectedIndustry = industries.find((i) => i.id === selectedIndustryId) ?? industries[1];
+  const pricedIndustries = useMemo(() => adjustIndustryUsAnchors(industries, fredData, newsScores), [fredData, newsScores]);
+  const selectedIndustry = pricedIndustries.find((i) => i.id === selectedIndustryId) ?? pricedIndustries[1];
   const selectedSegment = segments.find((s) => s.id === selectedSegmentId) ?? segments[1];
   const selectedArea = areas.find((a) => a.area === selectedAreaName) ?? areas[0];
   const [price, setPrice] = useState(selectedIndustry.okinawaCurrent);
@@ -127,8 +130,8 @@ export default function App() {
   }, [selectedIndustryId, selectedSegmentId, selectedAreaName, selectedFx, selectedTimespan]);
 
   useEffect(() => {
-    setPrice((industries.find((i) => i.id === selectedIndustryId) ?? industries[1]).okinawaCurrent);
-  }, [selectedIndustryId]);
+    setPrice((pricedIndustries.find((i) => i.id === selectedIndustryId) ?? pricedIndustries[1]).okinawaCurrent);
+  }, [pricedIndustries, selectedIndustryId]);
 
   useEffect(() => {
     const last = localStorage.getItem("lastUpdated");
@@ -149,9 +152,10 @@ export default function App() {
         <TradingViewFxPanel />
         <StrategicIntelligencePanel intelligence={strategicIntelligence} />
         <GdeltImpactPanel scores={newsScores} />
+        <UsPriceAnchorPanel fredData={fredData} newsScores={newsScores} industries={pricedIndustries} />
         <MarketDataOpsPanel ops={marketDataOps} />
         <BrowserResearchPanel rssIntel={rssIntel} />
-        <PricingSimulator industries={industries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={(value) => { setManualFxOverride(true); setSelectedFx(value); }} />
+        <PricingSimulator industries={pricedIndustries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={(value) => { setManualFxOverride(true); setSelectedFx(value); }} />
         <div className="grid-2">
           <GeoNewsPanel scores={newsScores} />
           <DailyMemoPanel fredData={fredData} newsScores={newsScores} marketTemperature={marketTemperature} fxOverride={fx} />
@@ -162,7 +166,7 @@ export default function App() {
         </div>
         <AreaMarketMap areas={areas} />
         <SegmentCards segments={segments} />
-        <IndustryTable industries={industries} segment={selectedSegment} area={selectedArea} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} />
+        <IndustryTable industries={pricedIndustries} segment={selectedSegment} area={selectedArea} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} />
         <SourcesPanel />
       </main>
     </div>

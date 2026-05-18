@@ -63,6 +63,14 @@ export function PricingSimulator(props: {
         </div>
       </div>
 
+      {props.selectedIndustry.usPriceAdjustment && (
+        <p className="note" style={{ marginTop: 12 }}>
+          米国単価アンカーは、最新の米国時給・CPI・外食/サービス価格・ニュース消費ストレスを使って
+          基準値から {((props.selectedIndustry.usPriceAdjustment - 1) * 100).toFixed(1)}% 補正されています。
+          {props.selectedIndustry.usPriceSignal}
+        </p>
+      )}
+
       <div className="summary-box" style={{ marginTop: 18 }}>
         <div className="grid-4">
           <Metric label="米国単価アンカー" value={`${usd(props.selectedIndustry.usLow)}〜${usd(props.selectedIndustry.usHigh)}`} sub={`${yen(props.selectedIndustry.usLow * props.fx)}〜${yen(props.selectedIndustry.usHigh * props.fx)} / ${props.selectedIndustry.unit}`} />
