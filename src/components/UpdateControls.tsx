@@ -82,7 +82,7 @@ export function UpdateControls(props: {
       </div>
       <p className="note">
         公開Vercel運用ではFRED APIキーをブラウザに入れないでください。APIキーはVercel環境変数に置き、/api/fred のサーバー側プロキシ経由で取得します。
-        GDELTが502/レート制限の場合、スコアはcache/fallback由来として表示します。
+        手動更新ではGDELTのローカル待機を超えて再取得を試みます。GDELTが502/レート制限の場合、スコアはcache/fallback由来として表示し、RSS/公式情報のライブ補助スコアを価格心理に反映します。
       </p>
       <div className="console" style={{ marginTop: 12 }}>
         {props.logs.length ? props.logs.map((log, i) => <div key={`${log}-${i}`}>{log}</div>) : "準備完了。更新ログはここに表示されます。"}

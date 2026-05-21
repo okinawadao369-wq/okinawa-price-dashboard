@@ -154,7 +154,7 @@ export const getGdeltCache = (timespan?: string) => {
     if (date && Date.now() - new Date(date).getTime() > cacheTtlMs) {
       return data.map((item) => ({ ...item, status: "cache" as const }));
     }
-    return data.map((item) => ({ ...item, status: item.status === "fallback" ? item.status : "cache" as const }));
+    return data;
   } catch {
     return null;
   }

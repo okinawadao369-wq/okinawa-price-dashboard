@@ -50,13 +50,40 @@ export default function App() {
   const [rssIntel, setRssIntel] = useState<RssIntelResult>(() => getRssIntelCache() ?? fallbackRssIntel());
   const [manualFxOverride, setManualFxOverride] = useState(false);
 
-  const pricedIndustries = useMemo(() => adjustIndustryUsAnchors(industries, fredData, newsScores), [fredData, newsScores]);
+  const newsScoresForPricing = useMemo(() => {
+    const gdeltLiveRatio = newsScores.filter((topic) => topic.status === "live").length / Math.max(newsScores.length, 1);
+    if (!rssIntel.liveCount || gdeltLiveRatio >= 0.5) return newsScores;
+    return newsScores.map((topic) => {
+      if (!["consumerStress", "marketRisk", "forwardPosture", "okinawaBase"].includes(topic.scoreRole)) return topic;
+      return {
+        ...topic,
+        score: Math.round(topic.score * 0.65 + rssIntel.riskScore * 0.35)
+      };
+    });
+  }, [newsScores, rssIntel]);
+  const pricedIndustries = useMemo(() => adjustIndustryUsAnchors(industries, fredData, newsScoresForPricing), [fredData, newsScoresForPricing]);
   const selectedIndustry = pricedIndustries.find((i) => i.id === selectedIndustryId) ?? pricedIndustries[1];
   const selectedSegment = segments.find((s) => s.id === selectedSegmentId) ?? segments[1];
   const selectedArea = areas.find((a) => a.area === selectedAreaName) ?? areas[0];
   const [price, setPrice] = useState(selectedIndustry.okinawaCurrent);
 
-  const newsAgg = useMemo(() => aggregateNews(newsScores), [newsScores]);
+  const gdeltAgg = useMemo(() => aggregateNews(newsScores), [newsScores]);
+  const newsAgg = useMemo(() => {
+    const gdeltLiveRatio = newsScores.filter((topic) => topic.status === "live").length / Math.max(newsScores.length, 1);
+    const rssReady = rssIntel.liveCount > 0 && rssIntel.total > 0;
+    const rssWeight = rssReady ? (gdeltLiveRatio < 0.5 ? 0.35 : 0.15) : 0;
+    const blend = (gdeltValue: number, rssValue: number) => Math.round(gdeltValue * (1 - rssWeight) + rssValue * rssWeight);
+    if (!rssWeight) return gdeltAgg;
+
+    return {
+      ...gdeltAgg,
+      geoRisk: blend(gdeltAgg.geoRisk, rssIntel.riskScore),
+      forwardPosture: blend(gdeltAgg.forwardPosture, rssIntel.riskScore),
+      okinawaBase: blend(gdeltAgg.okinawaBase, rssIntel.riskScore),
+      consumerStress: blend(gdeltAgg.consumerStress, rssIntel.riskScore),
+      marketRisk: blend(gdeltAgg.marketRisk, rssIntel.riskScore)
+    };
+  }, [gdeltAgg, newsScores, rssIntel]);
   const sourceStatus = useMemo(() => {
     const fredLive = fredData.filter((point) => point.status === "live").length;
     const gdeltLive = newsScores.filter((topic) => topic.status === "live").length;
@@ -70,12 +97,12 @@ export default function App() {
     const tone: "good" | "warn" | "bad" = fredLive === fredTotal && gdeltLive === gdeltTotal ? "good" : fredLive === 0 ? "bad" : "warn";
     const label = gdeltLive === gdeltTotal && fredLive === fredTotal
       ? "Live model"
-      : gdeltLive > 0
+      : gdeltLive > 0 || rssLive > 0
         ? "Partial live model"
-        : "FRED live / GDELT cache";
+        : "FRED live / news cache";
     const detail = gdeltLive === gdeltTotal && fredLive === fredTotal
-      ? `FRED ${fredLive}/${fredTotal} live + GDELT ${gdeltLive}/${gdeltTotal} live`
-      : `FRED ${fredLive}/${fredTotal} live、GDELT live ${gdeltLive}/${gdeltTotal}・cache ${gdeltCache}・fallback ${gdeltFallback}`;
+      ? `FRED ${fredLive}/${fredTotal} live + GDELT ${gdeltLive}/${gdeltTotal} live + RSS ${rssLive}/${rssTotal} live`
+      : `FRED ${fredLive}/${fredTotal} live、GDELT live ${gdeltLive}/${gdeltTotal}・cache ${gdeltCache}・fallback ${gdeltFallback}、RSS ${rssLive}/${rssTotal} live`;
     return {
       label,
       detail,
@@ -94,8 +121,8 @@ export default function App() {
   const cpiYoY = fredYoY(fredData, "CPIAUCSL", 3.1);
   const fredFx = fredValue(fredData, "DEXJPUS", 156);
   const fx = manualFxOverride && selectedFx ? selectedFx : liveFxRate.quality === "observed" ? liveFxRate.value : selectedFx || fredFx;
-  const strategicIntelligence = useMemo(() => computeStrategicIntelligence(fredData, newsScores, fx), [fredData, newsScores, fx]);
-  const marketDataOps = useMemo(() => computeMarketDataOps(fredData, newsScores, fx), [fredData, newsScores, fx]);
+  const strategicIntelligence = useMemo(() => computeStrategicIntelligence(fredData, newsScoresForPricing, fx), [fredData, newsScoresForPricing, fx]);
+  const marketDataOps = useMemo(() => computeMarketDataOps(fredData, newsScoresForPricing, fx), [fredData, newsScoresForPricing, fx]);
   const marketTemperature = computeMarketTemperature({
     fx,
     cpiYoY,
@@ -114,15 +141,20 @@ export default function App() {
     setLoading(true);
     const stamp = new Date().toLocaleString("ja-JP");
     setLogs((old) => [`${stamp} 更新開始`, ...old].slice(0, 20));
-    const [fred, gdelt, fxRate, rss] = await Promise.all([fetchFred(envFredKey, fredInlineKey), fetchGdelt(selectedTimespan, { force: forceGdelt }), fetchExchangeRate(), fetchRssIntel()]);
-    setFredData(fred.data);
-    setNewsScores(gdelt.data);
-    setLiveFxRate(fxRate.data);
-    setRssIntel(rss.data);
-    setSelectedFx(Number(fxRate.data.value.toFixed(2)));
-    setManualFxOverride(false);
-    setLogs((old) => [`${stamp} 更新完了`, ...rss.logs, ...fxRate.logs, ...fred.logs, ...gdelt.logs, ...old].slice(0, 30));
-    setLoading(false);
+    try {
+      const [fred, gdelt, fxRate, rss] = await Promise.all([fetchFred(envFredKey, fredInlineKey), fetchGdelt(selectedTimespan, { force: forceGdelt }), fetchExchangeRate(), fetchRssIntel()]);
+      setFredData(fred.data);
+      setNewsScores(gdelt.data);
+      setLiveFxRate(fxRate.data);
+      setRssIntel(rss.data);
+      setSelectedFx(Number(fxRate.data.value.toFixed(2)));
+      setManualFxOverride(false);
+      setLogs((old) => [`${stamp} 更新完了`, ...rss.logs, ...fxRate.logs, ...fred.logs, ...gdelt.logs, ...old].slice(0, 30));
+    } catch (error) {
+      setLogs((old) => [`${stamp} 更新処理エラー: ${error instanceof Error ? error.message : "unknown"}`, ...old].slice(0, 30));
+    } finally {
+      setLoading(false);
+    }
   }, [fredInlineKey, selectedTimespan]);
 
   useEffect(() => {
