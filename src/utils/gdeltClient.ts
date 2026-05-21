@@ -22,12 +22,16 @@ export type TopicScore = {
 };
 
 type GdeltCacheEnvelope = {
-  version: 4;
+  version: 5;
   date: string;
   timespan: string;
   attemptedAt: string;
   retryAfterMs: number;
   data: TopicScore[];
+};
+
+type FetchGdeltOptions = {
+  force?: boolean;
 };
 
 const riskWords = ["missile", "nuclear", "war", "attack", "drill", "exercise", "deployment", "blockade", "invasion", "sanction", "tariff", "inflation", "layoff", "shutdown", "protest", "incident", "warning", "crisis", "tension", "military", "budget", "deterrence", "readiness", "headquarters", "command", "interoperability", "alliance", "littoral", "stand-in"];
@@ -128,7 +132,7 @@ function getCacheEnvelope(timespan?: string) {
     const raw = localStorage.getItem(cacheKey);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as TopicScore[] | GdeltCacheEnvelope;
-    if (!isEnvelope(parsed) || parsed.version !== 4) return null;
+    if (!isEnvelope(parsed) || parsed.version !== 5) return null;
     if (timespan && parsed.timespan !== timespan) return null;
     return parsed;
   } catch {
@@ -141,7 +145,7 @@ export const getGdeltCache = (timespan?: string) => {
     const raw = localStorage.getItem(cacheKey);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as TopicScore[] | GdeltCacheEnvelope;
-    if (isEnvelope(parsed) && parsed.version !== 4) return null;
+    if (isEnvelope(parsed) && parsed.version !== 5) return null;
     const data = Array.isArray(parsed) ? parsed : parsed.data;
     if (data.length !== newsTopics.length) return null;
     const date = isEnvelope(parsed) ? parsed.date : localStorage.getItem("lastUpdated");
@@ -225,7 +229,7 @@ function articlesForTopic(topic: NewsTopic, articles: NewsArticle[]) {
 
 async function fetchBulkTopics(timespan: string): Promise<TopicScore[]> {
   const articles = await fetchArticles(broadQuery, timespan, 150);
-  return newsTopics.map((topic) => {
+  const results = newsTopics.map((topic) => {
     const topicArticles = articlesForTopic(topic, articles);
     const scored = scoreTopic(topic, topicArticles);
     return {
@@ -239,16 +243,52 @@ async function fetchBulkTopics(timespan: string): Promise<TopicScore[]> {
       articles: topicArticles
     };
   });
+  if (results.reduce((sum, topic) => sum + topic.articleCount, 0) === 0) {
+    throw new Error("GDELT broad fetch returned no classified topic articles");
+  }
+  return results;
 }
 
-export async function fetchGdelt(timespan: string): Promise<{ data: TopicScore[]; logs: string[] }> {
+async function fetchFocusedTopics(timespan: string): Promise<TopicScore[]> {
+  const results: TopicScore[] = [];
+  const chunkSize = 4;
+
+  for (let i = 0; i < newsTopics.length; i += chunkSize) {
+    const chunk = newsTopics.slice(i, i + chunkSize);
+    const settled = await Promise.allSettled(chunk.map(async (topic) => {
+      const articles = await fetchArticles(topic.query, timespan, 25);
+      const scored = scoreTopic(topic, articles);
+      return {
+        id: topic.id,
+        label: topic.label,
+        query: topic.query,
+        scoreRole: topic.scoreRole,
+        articleCount: articles.length,
+        ...scored,
+        status: "live" as const,
+        articles: articles.slice(0, 12)
+      };
+    }));
+
+    settled.forEach((item) => {
+      if (item.status === "fulfilled") results.push(item.value);
+    });
+  }
+
+  return results;
+}
+
+export async function fetchGdelt(timespan: string, options: FetchGdeltOptions = {}): Promise<{ data: TopicScore[]; logs: string[] }> {
   const logs: string[] = [];
+  const force = options.force ?? false;
   const cached = getGdeltCache(timespan);
   const fallback = fallbackGdelt();
   const envelope = getCacheEnvelope(timespan);
   const recentNonLiveAttempt = envelope && envelope.data.some((topic) => topic.status !== "live") && Date.now() - new Date(envelope.attemptedAt).getTime() < envelope.retryAfterMs;
 
-  if (recentNonLiveAttempt) {
+  if (force) logs.push("GDELT manual refresh: bypassing local cooldown and trying live collection.");
+
+  if (recentNonLiveAttempt && !force) {
     logs.push("GDELT cooldown active: using cache/fallback to avoid another 429.");
     logs.push("Wait about 30 minutes after a rate-limit event before refreshing again.");
     return { data: cached ?? fallback, logs };
@@ -267,17 +307,39 @@ export async function fetchGdelt(timespan: string): Promise<{ data: TopicScore[]
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown";
     logs.push(`GDELT broad fetch failed: ${message}`);
-    logs.push("GDELT is rate-limited easily. Auto retry is paused for 30 minutes after failure.");
-    results = newsTopics.map((topic) => {
-      const cachedTopic = cached?.find((c) => c.id === topic.id);
-      if (cachedTopic) return { ...cachedTopic, status: "cache" as const };
-      return fallback.find((f) => f.id === topic.id)!;
-    });
+    if (force) {
+      try {
+        const focused = await fetchFocusedTopics(timespan);
+        logs.push(`GDELT focused fetch OK: live ${focused.length}/${newsTopics.length} topics.`);
+        results = newsTopics.map((topic) => {
+          const liveTopic = focused.find((item) => item.id === topic.id);
+          if (liveTopic) return liveTopic;
+          const cachedTopic = cached?.find((c) => c.id === topic.id);
+          if (cachedTopic) return { ...cachedTopic, status: "cache" as const };
+          return fallback.find((f) => f.id === topic.id)!;
+        });
+      } catch (focusedError) {
+        const focusedMessage = focusedError instanceof Error ? focusedError.message : "unknown";
+        logs.push(`GDELT focused fetch failed: ${focusedMessage}`);
+        results = newsTopics.map((topic) => {
+          const cachedTopic = cached?.find((c) => c.id === topic.id);
+          if (cachedTopic) return { ...cachedTopic, status: "cache" as const };
+          return fallback.find((f) => f.id === topic.id)!;
+        });
+      }
+    } else {
+      logs.push("GDELT is rate-limited easily. Auto retry is paused for 30 minutes after failure.");
+      results = newsTopics.map((topic) => {
+        const cachedTopic = cached?.find((c) => c.id === topic.id);
+        if (cachedTopic) return { ...cachedTopic, status: "cache" as const };
+        return fallback.find((f) => f.id === topic.id)!;
+      });
+    }
   } finally {
     releaseGdeltLock();
   }
 
-  localStorage.setItem(cacheKey, JSON.stringify({ version: 4, date: new Date().toISOString(), timespan, attemptedAt: new Date().toISOString(), retryAfterMs, data: results } satisfies GdeltCacheEnvelope));
+  localStorage.setItem(cacheKey, JSON.stringify({ version: 5, date: new Date().toISOString(), timespan, attemptedAt: new Date().toISOString(), retryAfterMs, data: results } satisfies GdeltCacheEnvelope));
   localStorage.setItem("lastUpdated", new Date().toISOString());
   logs.push(`GDELT update complete: live ${results.filter((r) => r.status === "live").length}/${results.length} topics.`);
   return { data: results, logs };

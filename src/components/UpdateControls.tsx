@@ -5,7 +5,7 @@ export function UpdateControls(props: {
   setAutoUpdate: (value: boolean) => void;
   timespan: string;
   setTimespan: (value: string) => void;
-  onRefresh: () => void;
+  onRefresh: (forceGdelt?: boolean) => void;
   loading: boolean;
   logs: string[];
   fredInlineKey: string;
@@ -20,6 +20,8 @@ export function UpdateControls(props: {
     gdeltTotal: number;
     gdeltCache: number;
     gdeltFallback: number;
+    rssLive?: number;
+    rssTotal?: number;
     gdeltRetryUntil?: string;
   };
 }) {
@@ -55,7 +57,7 @@ export function UpdateControls(props: {
           </select>
         </div>
         <div style={{ alignSelf: "end" }}>
-          <button onClick={props.onRefresh} disabled={props.loading} style={{ width: "100%" }}>
+          <button onClick={() => props.onRefresh(true)} disabled={props.loading} style={{ width: "100%" }}>
             <RefreshCw size={16} style={{ verticalAlign: "-3px", marginRight: 8 }} />
             FRED + GDELTを更新
           </button>
@@ -67,6 +69,7 @@ export function UpdateControls(props: {
         <span className={status.gdeltLive ? "pill good" : "pill warn"}>GDELT live {status.gdeltLive}/{status.gdeltTotal}</span>
         <span className="pill warn">cache {status.gdeltCache}</span>
         <span className={status.gdeltFallback ? "pill bad" : "pill info"}>fallback {status.gdeltFallback}</span>
+        <span className={status.rssLive ? "pill good" : "pill warn"}>RSS live {status.rssLive ?? 0}/{status.rssTotal ?? 0}</span>
       </div>
 
       <div style={{ marginTop: 14 }}>

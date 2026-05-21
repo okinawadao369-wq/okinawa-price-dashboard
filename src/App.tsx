@@ -62,6 +62,8 @@ export default function App() {
     const gdeltLive = newsScores.filter((topic) => topic.status === "live").length;
     const gdeltCache = newsScores.filter((topic) => topic.status === "cache").length;
     const gdeltFallback = newsScores.filter((topic) => topic.status === "fallback").length;
+    const rssLive = rssIntel.liveCount;
+    const rssTotal = rssIntel.total;
     const meta = getGdeltCacheMeta(selectedTimespan);
     const gdeltTotal = newsScores.length;
     const fredTotal = fredData.length;
@@ -84,9 +86,11 @@ export default function App() {
       gdeltTotal,
       gdeltCache,
       gdeltFallback,
+      rssLive,
+      rssTotal,
       gdeltRetryUntil: meta?.retryUntil
     };
-  }, [fredData, newsScores, selectedTimespan]);
+  }, [fredData, newsScores, rssIntel, selectedTimespan]);
   const cpiYoY = fredYoY(fredData, "CPIAUCSL", 3.1);
   const fredFx = fredValue(fredData, "DEXJPUS", 156);
   const fx = manualFxOverride && selectedFx ? selectedFx : liveFxRate.quality === "observed" ? liveFxRate.value : selectedFx || fredFx;
@@ -106,11 +110,11 @@ export default function App() {
   const range = recommendedRange(selectedIndustry, fx, cpiYoY, newsAgg.geoRisk);
   const score = calculatePurchaseScore({ item: selectedIndustry, segment: selectedSegment, area: selectedArea, priceJPY: price, fx, marketTemperature });
 
-  const refreshAll = useCallback(async () => {
+  const refreshAll = useCallback(async (forceGdelt = false) => {
     setLoading(true);
     const stamp = new Date().toLocaleString("ja-JP");
     setLogs((old) => [`${stamp} 更新開始`, ...old].slice(0, 20));
-    const [fred, gdelt, fxRate, rss] = await Promise.all([fetchFred(envFredKey, fredInlineKey), fetchGdelt(selectedTimespan), fetchExchangeRate(), fetchRssIntel()]);
+    const [fred, gdelt, fxRate, rss] = await Promise.all([fetchFred(envFredKey, fredInlineKey), fetchGdelt(selectedTimespan, { force: forceGdelt }), fetchExchangeRate(), fetchRssIntel()]);
     setFredData(fred.data);
     setNewsScores(gdelt.data);
     setLiveFxRate(fxRate.data);
@@ -136,7 +140,7 @@ export default function App() {
   useEffect(() => {
     const last = localStorage.getItem("lastUpdated");
     const stale = !last || Date.now() - new Date(last).getTime() > 24 * 60 * 60 * 1000 || gdeltCacheNeedsRefresh(selectedTimespan);
-    if (autoUpdate && stale) void refreshAll();
+    if (autoUpdate && stale) void refreshAll(false);
   }, [autoUpdate, refreshAll, selectedTimespan]);
 
   return (
