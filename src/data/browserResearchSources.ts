@@ -1,6 +1,6 @@
 import type { EvidenceQuality } from "./monitoringSources";
 
-export type ResearchCollectionMethod = "official_api" | "official_rss" | "gdelt_search" | "licensed_manual" | "model_estimate";
+export type ResearchCollectionMethod = "official_api" | "official_rss" | "official_page" | "gdelt_search" | "licensed_manual" | "model_estimate";
 
 export type BrowserResearchSource = {
   id: string;
@@ -124,6 +124,28 @@ export const browserResearchSources: BrowserResearchSource[] = [
     canAutoCollect: true,
     dashboardMetric: "米軍作戦・同盟・即応性・装備/予算ニュース",
     note: "公式RSSから見出しを取得し、軍関連リスク/前方展開スコアの補助信号にする。"
+  },
+  {
+    id: "dfas_pay_tables",
+    name: "DFAS 2026 Military Pay Tables",
+    method: "official_page",
+    url: "https://www.dfas.mil/Pressroom/Article/4391719/2026-military-pay-tables-on-dfas-website/",
+    cadence: "年次/手当改定時",
+    quality: "observed",
+    canAutoCollect: false,
+    dashboardMetric: "米軍基本給・BAS・特殊手当・支払い余力",
+    note: "DFAS公式ページを給与アンカーとして監視。自動数値化は次段階、現時点は公式ページ・公開日・要旨を台帳化する。"
+  },
+  {
+    id: "dtmo_allowances",
+    name: "DTMO BAH/OHA/OCONUS COLA",
+    method: "official_page",
+    url: "https://www.travel.dod.mil/Allowances/BAH-Rate-Lookup/",
+    cadence: "年次/随時",
+    quality: "observed",
+    canAutoCollect: false,
+    dashboardMetric: "住宅手当・海外住宅手当・COLA・沖縄米軍家族の生活費補助",
+    note: "OkinawaはOHA/COLAの公式確認が必要。公式計算ページを参照し、推定値とは分離して扱う。"
   },
   {
     id: "usfj_official",

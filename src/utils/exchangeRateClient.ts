@@ -15,7 +15,7 @@ type Provider = {
 };
 
 const cacheKey = "liveUsdJpyRate";
-const fallbackRate = 157.8178;
+const fallbackRate = 158.9160;
 
 export function getExchangeRateCache() {
   try {
@@ -31,9 +31,9 @@ export function fallbackExchangeRate(): ExchangeRatePoint {
     pair: "USD/JPY",
     value: fallbackRate,
     unit: "JPY/USD",
-    source: "fallback from 2026-05-14 ExchangeRate-API check",
+    source: "fallback from 2026-05-21 ExchangeRate-API check",
     quality: "fallback",
-    observedAt: "Thu, 14 May 2026 00:02:31 +0000",
+    observedAt: "Thu, 21 May 2026 00:02:31 +0000",
     fetchedAt: new Date().toISOString()
   };
 }

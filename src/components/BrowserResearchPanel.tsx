@@ -4,6 +4,7 @@ import type { RssIntelResult } from "../utils/rssIntelClient";
 const methodLabel = {
   official_api: "公式API",
   official_rss: "公式RSS",
+  official_page: "公式ページ",
   gdelt_search: "GDELT検索",
   licensed_manual: "手動/ライセンス",
   model_estimate: "推計モデル"

@@ -141,7 +141,9 @@ export const getGdeltCache = (timespan?: string) => {
     const raw = localStorage.getItem(cacheKey);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as TopicScore[] | GdeltCacheEnvelope;
+    if (isEnvelope(parsed) && parsed.version !== 4) return null;
     const data = Array.isArray(parsed) ? parsed : parsed.data;
+    if (data.length !== newsTopics.length) return null;
     const date = isEnvelope(parsed) ? parsed.date : localStorage.getItem("lastUpdated");
     const cacheTimespan = isEnvelope(parsed) ? parsed.timespan : undefined;
     if (timespan && cacheTimespan && cacheTimespan !== timespan) return null;

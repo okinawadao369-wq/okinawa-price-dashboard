@@ -1,4 +1,4 @@
-export type DataSourceStatus = "自動API" | "ニュース検索" | "手動/ライセンス" | "推計モデル";
+export type DataSourceStatus = "自動API" | "ニュース検索" | "手動/ライセンス" | "推計モデル" | "公式ページ" | "公式手動確認";
 export type EvidenceQuality = "observed" | "estimated" | "fallback" | "unknown";
 
 export type MonitoringSource = {
@@ -31,6 +31,10 @@ export const monitoringSources: MonitoringSource[] = [
   { id: "treasury", category: "米政府/財政金融", source: "U.S. Treasury Fiscal Data API", url: "https://fiscaldata.treasury.gov/api-documentation/", updateCadence: "日次/月次", status: "自動API", quality: "observed", dashboardUse: "米財政、国債、利払い、為替参照を市場リスクへ反映" },
   { id: "usaspend", category: "米政府/支出", source: "USAspending API", url: "https://api.usaspending.gov/docs/", updateCadence: "日次/随時", status: "自動API", quality: "observed", dashboardUse: "国防・地域別支出の強弱を米軍関連需要の補助指標にする" },
   { id: "dod_budget", category: "米国防", source: "DoD Comptroller Budget Materials", url: "https://comptroller.defense.gov/Budget-Materials/Budget2026/", updateCadence: "予算発表/議会審議時", status: "ニュース検索", quality: "observed", dashboardUse: "国防予算、太平洋抑止、人件費の方向性を米軍商圏持続性へ反映" },
+  { id: "dfas_pay_tables_2026", category: "米軍給与", source: "DFAS 2026 Military Pay Tables", url: "https://www.dfas.mil/Pressroom/Article/4391719/2026-military-pay-tables-on-dfas-website/", updateCadence: "年次/手当更新時", status: "公式ページ", quality: "observed", dashboardUse: "米軍・軍属家族の基本給、BAS、特殊手当を価格心理・支払い余力の上限根拠へ反映" },
+  { id: "dfas_bas", category: "米軍給与", source: "DFAS Basic Allowance for Subsistence", url: "https://militarypay.defense.gov/pay/allowances/bas.aspx", updateCadence: "年次", status: "公式ページ", quality: "observed", dashboardUse: "BASを生活費補助として把握し、食品・外食・家族向けサービス価格心理へ反映" },
+  { id: "dtmo_bah_oha_cola", category: "米軍手当", source: "DTMO BAH/OHA/OCONUS COLA Allowances", url: "https://www.travel.dod.mil/Allowances/BAH-Rate-Lookup/", updateCadence: "年次/随時", status: "公式手動確認", quality: "observed", dashboardUse: "BAH/OHA/COLAを住宅費・海外生活費の公式根拠として、沖縄米軍家族の可処分所得推定へ反映" },
+  { id: "dod_fmr_housing_allowances", category: "米軍手当", source: "DoD FMR Volume 7A Housing Allowances", url: "https://comptroller.defense.gov/Portals/45/documents/fmr/current/07a/07a_26.pdf", updateCadence: "規則改定時", status: "公式ページ", quality: "observed", dashboardUse: "OHA/BAH/COLAの制度根拠を明示し、推定値と公式制度の混同を防ぐ" },
   { id: "dod_rss", category: "米国防", source: "DoD official news RSS", url: "https://www.war.gov/News/RSS/index.html/", updateCadence: "随時", status: "ニュース検索", quality: "observed", dashboardUse: "米軍作戦、同盟、即応性、予算・装備ニュースをRSS補助スコアへ反映" },
   { id: "usfj", category: "在日米軍", source: "U.S. Forces Japan official updates", url: "https://www.usfj.mil/", updateCadence: "随時", status: "ニュース検索", quality: "observed", dashboardUse: "USFJ再編、沖縄コミュニティ連携、共同パトロール、基地関係安定度へ反映" },
   { id: "mlr", category: "沖縄米軍", source: "12th Marine Littoral Regiment official site", url: "https://www.12thmlr.marines.mil/", updateCadence: "随時", status: "ニュース検索", quality: "observed", dashboardUse: "12th MLR、第一列島線、Camp Hansen/Schwabの前方展開度を確認" },
