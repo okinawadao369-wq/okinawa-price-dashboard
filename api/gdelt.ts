@@ -1,7 +1,7 @@
 const allowedTimespans = new Set(["1d", "2d", "3d", "7d"]);
 
 export const config = {
-  maxDuration: 30
+  maxDuration: 15
 };
 
 export default async function handler(req: any, res: any) {
@@ -29,8 +29,14 @@ export default async function handler(req: any, res: any) {
   url.searchParams.set("timespan", timespan);
   url.searchParams.set("sourcelang", "english");
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+
   try {
-    const upstream = await fetch(url, { headers: { "user-agent": "okinawa-price-dashboard/1.0" } });
+    const upstream = await fetch(url, {
+      headers: { "user-agent": "okinawa-price-dashboard/1.0" },
+      signal: controller.signal
+    });
     const body = await upstream.text();
     if (body.toLowerCase().includes("please limit requests")) {
       res.status(429).json({ error: "GDELT rate limit: please wait before refreshing again" });
@@ -40,6 +46,11 @@ export default async function handler(req: any, res: any) {
     res.setHeader("cache-control", "s-maxage=900, stale-while-revalidate=3600");
     res.status(upstream.status).send(body);
   } catch (error) {
-    res.status(502).json({ error: error instanceof Error ? error.message : "GDELT proxy failed" });
+    const isAbort = error instanceof DOMException && error.name === "AbortError";
+    res.status(isAbort ? 504 : 502).json({
+      error: isAbort ? "GDELT proxy timeout after 12s" : error instanceof Error ? error.message : "GDELT proxy failed"
+    });
+  } finally {
+    clearTimeout(timeoutId);
   }
 }

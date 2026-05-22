@@ -41,6 +41,7 @@ const lockKey = "gdeltFetchLock";
 const cacheTtlMs = 24 * 60 * 60 * 1000;
 const retryAfterMs = 30 * 60 * 1000;
 const lockTtlMs = 2 * 60 * 1000;
+const gdeltRequestTimeoutMs = 12000;
 const broadQuery = '(Taiwan OR "North Korea" OR DPRK OR USINDOPACOM OR "Indo-Pacific" OR Okinawa OR Kadena OR Futenma OR Henoko OR "U.S. Forces Japan" OR USFJ OR "Joint Force Headquarters" OR "Marine Littoral Regiment" OR "12th MLR" OR "first island chain" OR "Pacific Deterrence Initiative" OR "Federal Reserve" OR FOMC OR "U.S. economy" OR inflation OR "gas prices" OR "government shutdown" OR "defense budget" OR oil OR shipping OR childcare OR "restaurant prices" OR Walmart OR Target OR Costco OR Starbucks OR McDonald\'s)';
 
 const topicKeywords: Record<string, string[]> = {
@@ -195,8 +196,10 @@ function gdeltUrls(query: string, timespan: string, maxrecords = 50) {
 async function fetchArticles(query: string, timespan: string, maxrecords = 50) {
   let lastError = "unknown";
   for (const url of gdeltUrls(query, timespan, maxrecords)) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), gdeltRequestTimeoutMs);
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const contentType = res.headers.get("content-type") ?? "";
       if (!contentType.includes("json")) {
@@ -207,8 +210,12 @@ async function fetchArticles(query: string, timespan: string, maxrecords = 50) {
       const json = (await res.json()) as { articles?: NewsArticle[] };
       return json.articles ?? [];
     } catch (error) {
-      lastError = error instanceof Error ? error.message : "unknown";
+      lastError = error instanceof DOMException && error.name === "AbortError"
+        ? `GDELT request timeout after ${Math.round(gdeltRequestTimeoutMs / 1000)}s`
+        : error instanceof Error ? error.message : "unknown";
       if (error instanceof StopRetryError) break;
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   }
   throw new Error(lastError);

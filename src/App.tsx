@@ -11,6 +11,7 @@ import { SourcesPanel } from "./components/SourcesPanel";
 import { UpdateControls } from "./components/UpdateControls";
 import { AiConsultantPanel } from "./components/AiConsultantPanel";
 import { DailyMemoPanel, NewsArticlePanel } from "./components/DailyMemoPanel";
+import { DataFlowHealthPanel } from "./components/DataFlowHealthPanel";
 import { TradingViewFxPanel } from "./components/TradingViewFxPanel";
 import { StrategicIntelligencePanel } from "./components/StrategicIntelligencePanel";
 import { MarketDataOpsPanel } from "./components/MarketDataOpsPanel";
@@ -215,6 +216,15 @@ export default function App() {
           basePurchaseScore={basePurchaseScore}
           housingPsychologyScore={housingEvaluation.housingPsychologyScore}
           housingBoost={housingEvaluation.housingBoost}
+        />
+        <DataFlowHealthPanel
+          sourceStatus={sourceStatus}
+          fredData={fredData}
+          newsScores={newsScores}
+          fxRate={liveFxRate}
+          rssIntel={rssIntel}
+          housingBoost={housingEvaluation.housingBoost}
+          finalPurchaseScore={score}
         />
         <KpiCards fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} />
         <LiveFxPanel fxRate={liveFxRate} fredFx={fredFx} />
