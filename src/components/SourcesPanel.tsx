@@ -17,6 +17,7 @@ export function SourcesPanel() {
     { label: "Japan MOD: 沖縄からグアムへのForce Flow開始", url: "https://www.mod.go.jp/en/article/2024/12/6c46940d514c2bf54e7c946d49f5552e5730c31f.html" },
     { label: "Al Jazeera Asia: 国際政治・戦争・アジア情勢モニタリング", url: "https://www.aljazeera.com/asia/" },
     { label: "Bloomberg Currencies: 為替市場・円安/介入警戒の参照", url: "https://www.bloomberg.com/jp/markets/currencies" },
+    { label: "DTMO OHA/BAH references: 米軍住宅手当・制度価格市場の確認", url: "https://www.travel.dod.mil/Allowances/Overseas-Housing-Allowance/" },
     { label: "DFAS/DTMO/DeCA/BLS/EIA/Care.com/UrbanSitter/米国公開価格: 所得、手当、生活費、サービス価格の参照", url: "https://www.dfas.mil/MilitaryMembers/payentitlements/Pay-Tables/" }
   ];
   return (
@@ -27,6 +28,9 @@ export function SourcesPanel() {
       </p>
       <p className="scenario" style={{ border: "1px solid rgba(56,189,248,.35)", borderRadius: 14, padding: 12, background: "rgba(56,189,248,.08)" }}>
         FRED APIキーをフロントエンドに埋め込む場合、外部公開は非推奨です。公開運用する場合はバックエンドプロキシを利用してください。
+      </p>
+      <p className="scenario" style={{ border: "1px solid rgba(167,139,250,.35)", borderRadius: 14, padding: 12, background: "rgba(167,139,250,.08)" }}>
+        住宅心理モジュールは、公開資料、米軍住宅制度、OHA/BAHモデル、物件公開例を基にした推計モデルです。実際の入居可否、米軍承認、OHA支給可否、契約条件はHousing Office、物件管理会社、米軍規定で確認してください。OHAは実費補填型であり、上限との差額を自由に受け取れる制度ではありません。BAHはOHAと制度性質が異なります。
       </p>
       <ol className="source-list">
         {sources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noreferrer">{source.label}</a></li>)}

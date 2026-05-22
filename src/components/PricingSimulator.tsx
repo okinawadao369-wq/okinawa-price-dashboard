@@ -19,6 +19,11 @@ export function PricingSimulator(props: {
   cpiYoY: number;
   geoRisk: number;
   marketTemperature: number;
+  basePurchaseScore?: number;
+  housingPsychologyScore?: number;
+  housingBoost?: number;
+  finalPurchaseScore?: number;
+  housingBoostReason?: string;
   setIndustry: (id: string) => void;
   setSegment: (id: string) => void;
   setArea: (area: string) => void;
@@ -26,7 +31,8 @@ export function PricingSimulator(props: {
   setFx: (value: number) => void;
 }) {
   const range = recommendedRange(props.selectedIndustry, props.fx, props.cpiYoY, props.geoRisk);
-  const score = calculatePurchaseScore({ item: props.selectedIndustry, segment: props.selectedSegment, area: props.selectedArea, priceJPY: props.price, fx: props.fx, marketTemperature: props.marketTemperature });
+  const score = props.finalPurchaseScore ?? calculatePurchaseScore({ item: props.selectedIndustry, segment: props.selectedSegment, area: props.selectedArea, priceJPY: props.price, fx: props.fx, marketTemperature: props.marketTemperature });
+  const baseScore = props.basePurchaseScore ?? score;
   const usMidJPY = ((props.selectedIndustry.usLow + props.selectedIndustry.usHigh) / 2) * props.fx;
   const diff = props.price - range[0];
   const tone = scoreTone(score);
@@ -86,6 +92,14 @@ export function PricingSimulator(props: {
             <strong>{score >= 84 ? "非常に強い" : score >= 70 ? "強い" : score >= 58 ? "中程度" : "弱い"}</strong>：{verdict(score)}
             <br />
             米国相場中央値の円換算は {yen(usMidJPY)}。{props.selectedIndustry.comment}
+            {props.housingBoost && (
+              <>
+                <br />
+                住宅心理補正：base {Math.round(baseScore)} → final {Math.round(score)} / Housing {Math.round(props.housingPsychologyScore ?? 0)} / boost x{props.housingBoost.toFixed(2)}
+                <br />
+                <span className="small">{props.housingBoostReason}</span>
+              </>
+            )}
           </p>
         </div>
       </div>

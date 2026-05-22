@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Area, Industry, Segment } from "../data/baseData";
 import { calculatePurchaseScore, recommendedRange, verdict, yen } from "../utils/pricingEngine";
 
-export function IndustryTable({ industries, segment, area, fx, cpiYoY, geoRisk, marketTemperature }: { industries: Industry[]; segment: Segment; area: Area; fx: number; cpiYoY: number; geoRisk: number; marketTemperature: number }) {
+export function IndustryTable({ industries, segment, area, fx, cpiYoY, geoRisk, marketTemperature, housingBoost = 1 }: { industries: Industry[]; segment: Segment; area: Area; fx: number; cpiYoY: number; geoRisk: number; marketTemperature: number; housingBoost?: number }) {
   const groups = ["全部", ...Array.from(new Set(industries.map((item) => item.group)))];
   const [group, setGroup] = useState("全部");
   const rows = group === "全部" ? industries : industries.filter((item) => item.group === group);
@@ -23,7 +23,8 @@ export function IndustryTable({ industries, segment, area, fx, cpiYoY, geoRisk, 
           <tbody>
             {rows.map((item) => {
               const range = recommendedRange(item, fx, cpiYoY, geoRisk);
-              const score = calculatePurchaseScore({ item, segment, area, priceJPY: item.okinawaCurrent, fx, marketTemperature });
+              const baseScore = calculatePurchaseScore({ item, segment, area, priceJPY: item.okinawaCurrent, fx, marketTemperature });
+              const score = Math.min(100, baseScore * housingBoost);
               const tone = item.okinawaCurrent < range[0] ? "good" : item.okinawaCurrent <= range[1] ? "warn" : "bad";
               const label = item.okinawaCurrent < range[0] ? "値上げ余地" : item.okinawaCurrent <= range[1] ? "適正帯" : "高め";
               return (
@@ -32,7 +33,7 @@ export function IndustryTable({ industries, segment, area, fx, cpiYoY, geoRisk, 
                   <td>${item.usLow}〜${item.usHigh}<br /><span className="small">{item.unit}</span></td>
                   <td>{yen(item.okinawaCurrent)}<br /><span className="small">${Math.round(item.okinawaCurrent / fx)}</span></td>
                   <td><strong>{yen(range[0])}〜{yen(range[1])}</strong></td>
-                  <td><span className={`pill ${score >= 80 ? "good" : score >= 60 ? "warn" : "bad"}`}>{Math.round(score)}</span></td>
+                  <td><span className={`pill ${score >= 80 ? "good" : score >= 60 ? "warn" : "bad"}`}>{Math.round(score)}</span><br /><span className="small">base {Math.round(baseScore)} / housing x{housingBoost.toFixed(2)}</span></td>
                   <td><span className={`pill ${tone}`}>{label}</span><br /><span className="small">{verdict(score)}</span></td>
                   <td>{item.frequency}</td>
                 </tr>

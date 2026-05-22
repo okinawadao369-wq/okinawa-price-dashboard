@@ -13,9 +13,10 @@ export function AiConsultantPanel(props: {
   score: number;
   geoRisk: number;
   marketTemperature: number;
+  housingDiagnosis?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const text = consultantText(props);
+  const text = `${consultantText(props)}${props.housingDiagnosis ? `\n\n${props.housingDiagnosis}` : ""}`;
   const prompt = `以下の価格診断を外部AIで深掘りしてください。沖縄の米軍人・軍属・DoD civilian・米軍家族向けマーケティングとして、価格、英語訴求、広告、アップセル案を具体化してください。\n\n${text}`;
   return (
     <>

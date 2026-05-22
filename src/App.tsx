@@ -18,10 +18,19 @@ import { LiveFxPanel } from "./components/LiveFxPanel";
 import { BrowserResearchPanel } from "./components/BrowserResearchPanel";
 import { GdeltImpactPanel } from "./components/GdeltImpactPanel";
 import { UsPriceAnchorPanel } from "./components/UsPriceAnchorPanel";
+import { AiHousingConsultantPanel } from "./components/AiHousingConsultantPanel";
+import { HousingCharts } from "./components/HousingCharts";
+import { HousingExampleComparator } from "./components/HousingExampleComparator";
+import { HousingImpactPanel } from "./components/HousingImpactPanel";
+import { HousingKpiCards } from "./components/HousingKpiCards";
+import { HousingStrategyCards } from "./components/HousingStrategyCards";
+import { RankHousingBudgetTable } from "./components/RankHousingBudgetTable";
 import { areas, industries, segments } from "./data/baseData";
+import { okinawaMilitaryHousingExamples, okinawaOhaRankBudgets } from "./data/housingData";
 import { fallbackFred, fetchFred, fredValue, fredYoY, getFredCache, type FredPoint } from "./utils/fredClient";
 import { aggregateNews, fallbackGdelt, fetchGdelt, gdeltCacheNeedsRefresh, getGdeltCache, getGdeltCacheMeta, type TopicScore } from "./utils/gdeltClient";
 import { calculatePurchaseScore, computeMarketTemperature, recommendedRange } from "./utils/pricingEngine";
+import { evaluateHousing, housingBoostReason, housingConsultantText } from "./utils/housingPsychologyEngine";
 import { computeStrategicIntelligence } from "./utils/strategicEngine";
 import { computeMarketDataOps } from "./utils/marketIntelligenceEngine";
 import { fallbackExchangeRate, fetchExchangeRate, getExchangeRateCache, type ExchangeRatePoint } from "./utils/exchangeRateClient";
@@ -49,6 +58,8 @@ export default function App() {
   const [liveFxRate, setLiveFxRate] = useState<ExchangeRatePoint>(() => getExchangeRateCache() ?? fallbackExchangeRate());
   const [rssIntel, setRssIntel] = useState<RssIntelResult>(() => getRssIntelCache() ?? fallbackRssIntel());
   const [manualFxOverride, setManualFxOverride] = useState(false);
+  const [selectedHousingBudgetId, setSelectedHousingBudgetId] = useState(() => stored("selectedHousingBudget", "E5_O1_O2_DEP"));
+  const [selectedHousingExampleId, setSelectedHousingExampleId] = useState(() => stored("selectedHousingExample", "okinawa_yard_1540_300k"));
 
   const newsScoresForPricing = useMemo(() => {
     const gdeltLiveRatio = newsScores.filter((topic) => topic.status === "live").length / Math.max(newsScores.length, 1);
@@ -65,6 +76,8 @@ export default function App() {
   const selectedIndustry = pricedIndustries.find((i) => i.id === selectedIndustryId) ?? pricedIndustries[1];
   const selectedSegment = segments.find((s) => s.id === selectedSegmentId) ?? segments[1];
   const selectedArea = areas.find((a) => a.area === selectedAreaName) ?? areas[0];
+  const selectedHousingBudget = okinawaOhaRankBudgets.find((item) => item.id === selectedHousingBudgetId) ?? okinawaOhaRankBudgets[1];
+  const selectedHousingExample = okinawaMilitaryHousingExamples.find((item) => item.id === selectedHousingExampleId) ?? okinawaMilitaryHousingExamples[1];
   const [price, setPrice] = useState(selectedIndustry.okinawaCurrent);
 
   const gdeltAgg = useMemo(() => aggregateNews(newsScores), [newsScores]);
@@ -135,7 +148,19 @@ export default function App() {
     strategicDemand: strategicIntelligence.strategicDemand
   });
   const range = recommendedRange(selectedIndustry, fx, cpiYoY, newsAgg.geoRisk);
-  const score = calculatePurchaseScore({ item: selectedIndustry, segment: selectedSegment, area: selectedArea, priceJPY: price, fx, marketTemperature });
+  const basePurchaseScore = calculatePurchaseScore({ item: selectedIndustry, segment: selectedSegment, area: selectedArea, priceJPY: price, fx, marketTemperature });
+  const housingEvaluation = useMemo(() => evaluateHousing(selectedHousingExample, selectedHousingBudget, fx), [selectedHousingExample, selectedHousingBudget, fx]);
+  const score = Math.min(100, basePurchaseScore * housingEvaluation.housingBoost);
+  const housingReason = housingBoostReason(housingEvaluation.housingPsychologyScore, housingEvaluation.allowanceGap.gapUsd, fx);
+  const housingDiagnosis = housingConsultantText({
+    budget: selectedHousingBudget,
+    example: selectedHousingExample,
+    fx,
+    servicePriceJpy: price,
+    serviceLabel: selectedIndustry.industry,
+    basePurchaseScore,
+    finalPurchaseScore: score
+  });
 
   const refreshAll = useCallback(async (forceGdelt = false) => {
     setLoading(true);
@@ -163,7 +188,9 @@ export default function App() {
     localStorage.setItem("selectedArea", selectedAreaName);
     localStorage.setItem("selectedFx", String(selectedFx));
     localStorage.setItem("selectedTimespan", selectedTimespan);
-  }, [selectedIndustryId, selectedSegmentId, selectedAreaName, selectedFx, selectedTimespan]);
+    localStorage.setItem("selectedHousingBudget", selectedHousingBudgetId);
+    localStorage.setItem("selectedHousingExample", selectedHousingExampleId);
+  }, [selectedIndustryId, selectedSegmentId, selectedAreaName, selectedFx, selectedTimespan, selectedHousingBudgetId, selectedHousingExampleId]);
 
   useEffect(() => {
     setPrice((pricedIndustries.find((i) => i.id === selectedIndustryId) ?? pricedIndustries[1]).okinawaCurrent);
@@ -182,16 +209,25 @@ export default function App() {
         <KpiCards fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} />
         <LiveFxPanel fxRate={liveFxRate} fredFx={fredFx} />
         <div className="grid-2">
-          <AiConsultantPanel item={selectedIndustry} segment={selectedSegment} area={selectedArea} priceJPY={price} fx={fx} range={range} score={score} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} />
+          <AiConsultantPanel item={selectedIndustry} segment={selectedSegment} area={selectedArea} priceJPY={price} fx={fx} range={range} score={score} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} housingDiagnosis={housingDiagnosis} />
           <UpdateControls autoUpdate={autoUpdate} setAutoUpdate={setAutoUpdate} timespan={selectedTimespan} setTimespan={setSelectedTimespan} onRefresh={refreshAll} loading={loading} logs={logs} fredInlineKey={fredInlineKey} setFredInlineKey={setFredInlineKey} sourceStatus={sourceStatus} />
         </div>
+        <HousingKpiCards />
+        <div className="grid-2">
+          <HousingImpactPanel budget={selectedHousingBudget} example={selectedHousingExample} fx={fx} basePurchaseScore={basePurchaseScore} finalPurchaseScore={score} housingBoost={housingEvaluation.housingBoost} setBudget={setSelectedHousingBudgetId} setExample={setSelectedHousingExampleId} />
+          <AiHousingConsultantPanel budget={selectedHousingBudget} example={selectedHousingExample} fx={fx} servicePriceJpy={price} serviceLabel={selectedIndustry.industry} basePurchaseScore={basePurchaseScore} finalPurchaseScore={score} />
+        </div>
+        <RankHousingBudgetTable />
+        <HousingExampleComparator budget={selectedHousingBudget} fx={fx} />
+        <HousingCharts />
+        <HousingStrategyCards />
         <TradingViewFxPanel />
         <StrategicIntelligencePanel intelligence={strategicIntelligence} />
         <GdeltImpactPanel scores={newsScores} />
         <UsPriceAnchorPanel fredData={fredData} newsScores={newsScores} industries={pricedIndustries} />
         <MarketDataOpsPanel ops={marketDataOps} />
         <BrowserResearchPanel rssIntel={rssIntel} />
-        <PricingSimulator industries={pricedIndustries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={(value) => { setManualFxOverride(true); setSelectedFx(value); }} />
+        <PricingSimulator industries={pricedIndustries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} basePurchaseScore={basePurchaseScore} housingPsychologyScore={housingEvaluation.housingPsychologyScore} housingBoost={housingEvaluation.housingBoost} finalPurchaseScore={score} housingBoostReason={housingReason} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={(value) => { setManualFxOverride(true); setSelectedFx(value); }} />
         <div className="grid-2">
           <GeoNewsPanel scores={newsScores} />
           <DailyMemoPanel fredData={fredData} newsScores={newsScores} marketTemperature={marketTemperature} fxOverride={fx} />
@@ -202,7 +238,7 @@ export default function App() {
         </div>
         <AreaMarketMap areas={areas} />
         <SegmentCards segments={segments} />
-        <IndustryTable industries={pricedIndustries} segment={selectedSegment} area={selectedArea} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} />
+        <IndustryTable industries={pricedIndustries} segment={selectedSegment} area={selectedArea} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} housingBoost={housingEvaluation.housingBoost} />
         <SourcesPanel />
       </main>
     </div>
