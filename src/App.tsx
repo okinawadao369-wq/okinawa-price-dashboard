@@ -15,6 +15,7 @@ import { TradingViewFxPanel } from "./components/TradingViewFxPanel";
 import { StrategicIntelligencePanel } from "./components/StrategicIntelligencePanel";
 import { MarketDataOpsPanel } from "./components/MarketDataOpsPanel";
 import { LiveFxPanel } from "./components/LiveFxPanel";
+import { MobileExecutiveSummary } from "./components/MobileExecutiveSummary";
 import { BrowserResearchPanel } from "./components/BrowserResearchPanel";
 import { GdeltImpactPanel } from "./components/GdeltImpactPanel";
 import { UsPriceAnchorPanel } from "./components/UsPriceAnchorPanel";
@@ -206,6 +207,15 @@ export default function App() {
     <div className="app-shell">
       <Header sourceStatus={sourceStatus} />
       <main className="dashboard-main">
+        <MobileExecutiveSummary
+          fx={fx}
+          geoRisk={newsAgg.geoRisk}
+          marketTemperature={marketTemperature}
+          finalPurchaseScore={score}
+          basePurchaseScore={basePurchaseScore}
+          housingPsychologyScore={housingEvaluation.housingPsychologyScore}
+          housingBoost={housingEvaluation.housingBoost}
+        />
         <KpiCards fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} />
         <LiveFxPanel fxRate={liveFxRate} fredFx={fredFx} />
         <div className="grid-2">
