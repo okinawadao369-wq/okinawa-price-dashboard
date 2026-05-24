@@ -14,6 +14,7 @@ export type FredPoint = {
 type FredObservation = { date: string; value: string };
 
 const cacheKey = "fredCache";
+const cacheUpdatedAtKey = "fredCacheUpdatedAt";
 
 export function fallbackFred(): FredPoint[] {
   return fredSeries.map((s) => ({
@@ -31,11 +32,14 @@ export function fallbackFred(): FredPoint[] {
 export const getFredCache = () => {
   try {
     const raw = localStorage.getItem(cacheKey);
-    return raw ? (JSON.parse(raw) as FredPoint[]) : null;
+    const data = raw ? (JSON.parse(raw) as FredPoint[]) : null;
+    return data ? data.map((point) => ({ ...point, status: point.status === "fallback" ? "fallback" as const : "cache" as const })) : null;
   } catch {
     return null;
   }
 };
+
+export const getFredCacheUpdatedAt = () => localStorage.getItem(cacheUpdatedAtKey);
 
 export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ data: FredPoint[]; logs: string[] }> {
   const key = (apiKey || inlineKey || "").trim();
@@ -102,6 +106,7 @@ export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ 
   );
 
   localStorage.setItem(cacheKey, JSON.stringify(results));
+  localStorage.setItem(cacheUpdatedAtKey, new Date().toISOString());
   localStorage.setItem("lastUpdated", new Date().toISOString());
   logs.push(`FRED更新完了: ライブ ${results.filter((r) => r.status === "live").length}/${results.length} 系列`);
   return { data: results, logs };

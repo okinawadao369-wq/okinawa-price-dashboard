@@ -29,7 +29,7 @@ import { HousingStrategyCards } from "./components/HousingStrategyCards";
 import { RankHousingBudgetTable } from "./components/RankHousingBudgetTable";
 import { areas, industries, segments } from "./data/baseData";
 import { okinawaMilitaryHousingExamples, okinawaOhaRankBudgets } from "./data/housingData";
-import { fallbackFred, fetchFred, fredValue, fredYoY, getFredCache, type FredPoint } from "./utils/fredClient";
+import { fallbackFred, fetchFred, fredValue, fredYoY, getFredCache, getFredCacheUpdatedAt, type FredPoint } from "./utils/fredClient";
 import { aggregateNews, fallbackGdelt, fetchGdelt, gdeltCacheNeedsRefresh, getGdeltCache, getGdeltCacheMeta, type TopicScore } from "./utils/gdeltClient";
 import { calculatePurchaseScore, computeMarketTemperature, recommendedRange } from "./utils/pricingEngine";
 import { evaluateHousing, housingBoostReason, housingConsultantText } from "./utils/housingPsychologyEngine";
@@ -46,13 +46,14 @@ function stored(key: string, fallback: string) {
 }
 
 export default function App() {
+  const initialTimespan = stored("selectedTimespan", "1d");
   const [fredData, setFredData] = useState<FredPoint[]>(() => getFredCache() ?? fallbackFred());
-  const [newsScores, setNewsScores] = useState<TopicScore[]>(() => getGdeltCache() ?? fallbackGdelt());
+  const [newsScores, setNewsScores] = useState<TopicScore[]>(() => getGdeltCache(initialTimespan) ?? fallbackGdelt());
   const [selectedIndustryId, setSelectedIndustryId] = useState(() => stored("selectedIndustry", "ft_4d"));
   const [selectedSegmentId, setSelectedSegmentId] = useState(() => stored("selectedSegment", "E4E6"));
   const [selectedAreaName, setSelectedAreaName] = useState(() => stored("selectedArea", areas[0].area));
   const [selectedFx, setSelectedFx] = useState(() => Number(stored("selectedFx", "156")));
-  const [selectedTimespan, setSelectedTimespan] = useState(() => stored("selectedTimespan", "1d"));
+  const [selectedTimespan, setSelectedTimespan] = useState(() => initialTimespan);
   const [autoUpdate, setAutoUpdate] = useState(true);
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
@@ -101,6 +102,8 @@ export default function App() {
   }, [gdeltAgg, newsScores, rssIntel]);
   const sourceStatus = useMemo(() => {
     const fredLive = fredData.filter((point) => point.status === "live").length;
+    const fredCache = fredData.filter((point) => point.status === "cache").length;
+    const fredFallback = fredData.filter((point) => point.status === "fallback").length;
     const gdeltLive = newsScores.filter((topic) => topic.status === "live").length;
     const gdeltCache = newsScores.filter((topic) => topic.status === "cache").length;
     const gdeltFallback = newsScores.filter((topic) => topic.status === "fallback").length;
@@ -109,20 +112,24 @@ export default function App() {
     const meta = getGdeltCacheMeta(selectedTimespan);
     const gdeltTotal = newsScores.length;
     const fredTotal = fredData.length;
-    const tone: "good" | "warn" | "bad" = fredLive === fredTotal && gdeltLive === gdeltTotal ? "good" : fredLive === 0 ? "bad" : "warn";
+    const fredUsable = fredLive + fredCache;
+    const gdeltUsable = gdeltLive + gdeltCache;
+    const tone: "good" | "warn" | "bad" = fredLive === fredTotal && gdeltLive === gdeltTotal ? "good" : fredUsable === fredTotal && gdeltUsable > 0 ? "warn" : "bad";
     const label = gdeltLive === gdeltTotal && fredLive === fredTotal
       ? "Live model"
-      : gdeltLive > 0 || rssLive > 0
+      : fredUsable === fredTotal && (gdeltUsable > 0 || rssLive > 0)
         ? "Partial live model"
         : "FRED live / news cache";
     const detail = gdeltLive === gdeltTotal && fredLive === fredTotal
       ? `FRED ${fredLive}/${fredTotal} live + GDELT ${gdeltLive}/${gdeltTotal} live + RSS ${rssLive}/${rssTotal} live`
-      : `FRED ${fredLive}/${fredTotal} live、GDELT live ${gdeltLive}/${gdeltTotal}・cache ${gdeltCache}・fallback ${gdeltFallback}、RSS ${rssLive}/${rssTotal} live`;
+      : `FRED live ${fredLive}/${fredTotal}・cache ${fredCache}・fallback ${fredFallback}、GDELT live ${gdeltLive}/${gdeltTotal}・cache ${gdeltCache}・fallback ${gdeltFallback}、RSS ${rssLive}/${rssTotal} live`;
     return {
       label,
       detail,
       tone,
       fredLive,
+      fredCache,
+      fredFallback,
       fredTotal,
       gdeltLive,
       gdeltTotal,
@@ -200,7 +207,9 @@ export default function App() {
 
   useEffect(() => {
     const last = localStorage.getItem("lastUpdated");
-    const stale = !last || Date.now() - new Date(last).getTime() > 24 * 60 * 60 * 1000 || gdeltCacheNeedsRefresh(selectedTimespan);
+    const fredLast = getFredCacheUpdatedAt();
+    const fredStale = !fredLast || Date.now() - new Date(fredLast).getTime() > 24 * 60 * 60 * 1000;
+    const stale = fredStale || !last || Date.now() - new Date(last).getTime() > 24 * 60 * 60 * 1000 || gdeltCacheNeedsRefresh(selectedTimespan);
     if (autoUpdate && stale) void refreshAll(false);
   }, [autoUpdate, refreshAll, selectedTimespan]);
 

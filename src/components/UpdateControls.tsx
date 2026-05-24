@@ -15,6 +15,8 @@ export function UpdateControls(props: {
     detail: string;
     tone: "good" | "warn" | "bad";
     fredLive: number;
+    fredCache: number;
+    fredFallback: number;
     fredTotal: number;
     gdeltLive: number;
     gdeltTotal: number;
@@ -66,6 +68,8 @@ export function UpdateControls(props: {
 
       <div className="source-quality">
         <span className="pill good">FRED live {status.fredLive}/{status.fredTotal}</span>
+        <span className="pill warn">FRED cache {status.fredCache}</span>
+        <span className={status.fredFallback ? "pill bad" : "pill info"}>FRED fallback {status.fredFallback}</span>
         <span className={status.gdeltLive ? "pill good" : "pill warn"}>GDELT live {status.gdeltLive}/{status.gdeltTotal}</span>
         <span className="pill warn">cache {status.gdeltCache}</span>
         <span className={status.gdeltFallback ? "pill bad" : "pill info"}>fallback {status.gdeltFallback}</span>

@@ -152,10 +152,7 @@ export const getGdeltCache = (timespan?: string) => {
     const date = isEnvelope(parsed) ? parsed.date : localStorage.getItem("lastUpdated");
     const cacheTimespan = isEnvelope(parsed) ? parsed.timespan : undefined;
     if (timespan && cacheTimespan && cacheTimespan !== timespan) return null;
-    if (date && Date.now() - new Date(date).getTime() > cacheTtlMs) {
-      return data.map((item) => ({ ...item, status: "cache" as const }));
-    }
-    return data;
+    return data.map((item) => ({ ...item, status: item.status === "fallback" ? "fallback" as const : "cache" as const }));
   } catch {
     return null;
   }

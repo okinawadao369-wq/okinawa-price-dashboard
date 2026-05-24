@@ -6,6 +6,8 @@ import type { RssIntelResult } from "../utils/rssIntelClient";
 
 type SourceStatus = {
   fredLive: number;
+  fredCache: number;
+  fredFallback: number;
   fredTotal: number;
   gdeltLive: number;
   gdeltTotal: number;
@@ -53,9 +55,13 @@ export function DataFlowHealthPanel({
   const rows = [
     {
       label: "FRED経済指標",
-      status: `${sourceStatus.fredLive}/${sourceStatus.fredTotal} live`,
+      status: `live ${sourceStatus.fredLive}/${sourceStatus.fredTotal}`,
       detail: `最新日付 ${newestFredDate(fredData)}。CPI・雇用・賃金・金利を価格心理へ反映。`,
-      tone: toneFromRatio(sourceStatus.fredLive, sourceStatus.fredTotal),
+      tone: sourceStatus.fredLive === sourceStatus.fredTotal
+        ? "good"
+        : sourceStatus.fredLive + sourceStatus.fredCache === sourceStatus.fredTotal
+          ? "warn"
+          : "bad",
       icon: <Database size={18} />
     },
     {
