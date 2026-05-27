@@ -75,7 +75,11 @@ export function DataFlowHealthPanel({
       label: "GDELTニュース",
       status: `${sourceStatus.gdeltLive}/${sourceStatus.gdeltTotal} live`,
       detail: `${gdeltArticles}件分類。取得不能時はcache/fallbackとして明示し、RSSで補完。`,
-      tone: toneFromRatio(sourceStatus.gdeltLive, sourceStatus.gdeltTotal),
+      tone: sourceStatus.gdeltLive === sourceStatus.gdeltTotal
+        ? "good"
+        : sourceStatus.gdeltLive + sourceStatus.gdeltCache > 0
+          ? "warn"
+          : "bad",
       icon: <Newspaper size={18} />
     },
     {

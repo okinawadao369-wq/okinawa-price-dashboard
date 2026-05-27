@@ -67,7 +67,7 @@ export function UpdateControls(props: {
       </div>
 
       <div className="source-quality">
-        <span className="pill good">FRED live {status.fredLive}/{status.fredTotal}</span>
+        <span className={status.fredLive ? "pill good" : "pill warn"}>FRED live {status.fredLive}/{status.fredTotal}</span>
         <span className="pill warn">FRED cache {status.fredCache}</span>
         <span className={status.fredFallback ? "pill bad" : "pill info"}>FRED fallback {status.fredFallback}</span>
         <span className={status.gdeltLive ? "pill good" : "pill warn"}>GDELT live {status.gdeltLive}/{status.gdeltTotal}</span>
