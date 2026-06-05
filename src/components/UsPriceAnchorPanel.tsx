@@ -56,10 +56,16 @@ export function UsPriceAnchorPanel({ fredData, newsScores, industries }: { fredD
             {top.map((item) => (
               <tr key={item.id}>
                 <td><strong>{item.industry}</strong><div className="small">{item.group}</div></td>
-                <td>${item.usLowBase ?? item.usLow} - ${item.usHighBase ?? item.usHigh}</td>
+                <td>
+                  ${item.usLowBase ?? item.usLow} - ${item.usHighBase ?? item.usHigh}
+                  <div className="small">{item.usPriceQuality ?? "estimated"} / {item.usPriceLastReviewed ?? "review date unknown"}</div>
+                </td>
                 <td><strong>${item.usLow} - ${item.usHigh}</strong></td>
                 <td><span className={`pill ${(item.usPriceAdjustment ?? 1) >= 1.06 ? "good" : "warn"}`}>{(((item.usPriceAdjustment ?? 1) - 1) * 100).toFixed(1)}%</span></td>
-                <td><span className="small">{item.usPriceSignal}</span></td>
+                <td>
+                  <span className="small">{item.usPriceSignal}</span>
+                  <div className="small">{item.usPriceRationale}</div>
+                </td>
               </tr>
             ))}
           </tbody>

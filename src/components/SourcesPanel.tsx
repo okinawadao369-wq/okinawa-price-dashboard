@@ -18,6 +18,12 @@ export function SourcesPanel() {
     { label: "Al Jazeera Asia: 国際政治・戦争・アジア情勢モニタリング", url: "https://www.aljazeera.com/asia/" },
     { label: "Bloomberg Currencies: 為替市場・円安/介入警戒の参照", url: "https://www.bloomberg.com/jp/markets/currencies" },
     { label: "DTMO OHA/BAH references: 米軍住宅手当・制度価格市場の確認", url: "https://www.travel.dod.mil/Allowances/Overseas-Housing-Allowance/" },
+    { label: "UrbanSitter 2026 babysitting rates: 米国家族向けベビーシッター単価アンカー", url: "https://www.urbansitter.com/babysitting-rates/" },
+    { label: "Care.com babysitter and nanny cost guides: 産後ケア・シッター単価の補助参照", url: "https://www.care.com/c/how-much-does-a-babysitter-cost-babysitting-guide/" },
+    { label: "BLS CPI: Food Away From Home / services / hourly earnings price pressure", url: "https://www.bls.gov/cpi/" },
+    { label: "Housecall Pro 2026 house cleaning prices: 生活サービス単価アンカー", url: "https://www.housecallpro.com/resources/house-cleaning-prices/" },
+    { label: "HomeGuide house cleaning prices: cleaning hourly range cross-check", url: "https://homeguide.com/costs/house-cleaning-prices" },
+    { label: "U.S. court interpreter rate references: 通訳・行政同行単価の公的補助参照", url: "https://www.gand.uscourts.gov/sites/gand/files/Interpreter_Rates2026.pdf" },
     { label: "DFAS/DTMO/DeCA/BLS/EIA/Care.com/UrbanSitter/米国公開価格: 所得、手当、生活費、サービス価格の参照", url: "https://www.dfas.mil/MilitaryMembers/payentitlements/Pay-Tables/" }
   ];
   return (

@@ -25,6 +25,9 @@ export type Industry = {
   usHighBase?: number;
   usPriceAdjustment?: number;
   usPriceSignal?: string;
+  usPriceSource?: string;
+  usPriceLastReviewed?: string;
+  usPriceRationale?: string;
   usPriceQuality?: "observed" | "estimated" | "fallback" | "unknown";
   okinawaCurrent: number;
   unit: string;

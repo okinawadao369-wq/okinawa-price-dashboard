@@ -30,12 +30,16 @@ export function IndustryTable({ industries, segment, area, fx, cpiYoY, geoRisk, 
               return (
                 <tr key={item.id}>
                   <td><strong>{item.industry}</strong><br /><span className="small">{item.group} / {item.comment}</span></td>
-                  <td>${item.usLow}〜${item.usHigh}<br /><span className="small">{item.unit}</span></td>
+                  <td>
+                    ${item.usLow}〜${item.usHigh}<br />
+                    <span className="small">{item.unit}</span><br />
+                    <span className="small">base ${item.usLowBase ?? item.usLow}〜${item.usHighBase ?? item.usHigh} / {item.usPriceQuality ?? "estimated"}</span>
+                  </td>
                   <td>{yen(item.okinawaCurrent)}<br /><span className="small">${Math.round(item.okinawaCurrent / fx)}</span></td>
                   <td><strong>{yen(range[0])}〜{yen(range[1])}</strong></td>
                   <td><span className={`pill ${score >= 80 ? "good" : score >= 60 ? "warn" : "bad"}`}>{Math.round(score)}</span><br /><span className="small">base {Math.round(baseScore)} / housing x{housingBoost.toFixed(2)}</span></td>
                   <td><span className={`pill ${tone}`}>{label}</span><br /><span className="small">{verdict(score)}</span></td>
-                  <td>{item.frequency}</td>
+                  <td>{item.frequency}<br /><span className="small">{item.usPriceSource}</span></td>
                 </tr>
               );
             })}

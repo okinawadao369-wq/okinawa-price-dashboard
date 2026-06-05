@@ -74,6 +74,12 @@ export function PricingSimulator(props: {
           米国単価アンカーは、最新の米国時給・CPI・外食/サービス価格・ニュース消費ストレスを使って
           基準値から {((props.selectedIndustry.usPriceAdjustment - 1) * 100).toFixed(1)}% 補正されています。
           {props.selectedIndustry.usPriceSignal}
+          <br />
+          <span className="small">
+            米国単価根拠: {props.selectedIndustry.usPriceSource ?? "dashboard model"} / 品質: {props.selectedIndustry.usPriceQuality ?? "estimated"}
+            {props.selectedIndustry.usPriceLastReviewed ? ` / 確認日: ${props.selectedIndustry.usPriceLastReviewed}` : ""}
+            {props.selectedIndustry.usPriceRationale ? ` / ${props.selectedIndustry.usPriceRationale}` : ""}
+          </span>
         </p>
       )}
 

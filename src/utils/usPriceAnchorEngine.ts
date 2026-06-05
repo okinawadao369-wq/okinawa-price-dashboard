@@ -4,6 +4,7 @@ import { fredValue, fredYoY } from "./fredClient";
 import type { TopicScore } from "./gdeltClient";
 import { aggregateNews } from "./gdeltClient";
 import { clamp } from "./pricingEngine";
+import { benchmarkForIndustry } from "../data/usPriceBenchmarks";
 
 export type UsAnchorPulse = {
   label: string;
@@ -74,18 +75,24 @@ export function adjustIndustryUsAnchors(industries: Industry[], fredData: FredPo
   const ctx = buildUsPriceAnchorContext(fredData, newsScores);
   return industries.map((item) => {
     const sector = sectorFor(item);
+    const benchmark = benchmarkForIndustry(item.id);
     const multiplier = sectorMultiplier(sector, ctx.cpiYoY, ctx.coreCpiYoY, ctx.foodAwayYoY, ctx.hourlyWage, ctx.gasYoY, ctx.consumerStress);
-    const low = Math.max(1, item.usLow * multiplier);
-    const high = Math.max(low, item.usHigh * multiplier);
+    const baseLow = benchmark?.baseLow ?? item.usLowBase ?? item.usLow;
+    const baseHigh = benchmark?.baseHigh ?? item.usHighBase ?? item.usHigh;
+    const low = Math.max(1, baseLow * multiplier);
+    const high = Math.max(low, baseHigh * multiplier);
     return {
       ...item,
-      usLowBase: item.usLowBase ?? item.usLow,
-      usHighBase: item.usHighBase ?? item.usHigh,
+      usLowBase: baseLow,
+      usHighBase: baseHigh,
       usLow: Number(low.toFixed(low < 30 ? 2 : 0)),
       usHigh: Number(high.toFixed(high < 30 ? 2 : 0)),
       usPriceAdjustment: multiplier,
-      usPriceQuality: "estimated",
-      usPriceSignal: `米国時給 $${ctx.hourlyWage.toFixed(2)}、CPI ${ctx.cpiYoY.toFixed(1)}%、外食CPI ${ctx.foodAwayYoY.toFixed(1)}%、消費ストレス ${Math.round(ctx.consumerStress)} を反映`
+      usPriceQuality: benchmark?.quality ?? "estimated",
+      usPriceSource: benchmark?.sourceFamily ?? "Base dashboard model + FRED/GDELT adjustment",
+      usPriceLastReviewed: benchmark?.lastReviewed,
+      usPriceRationale: benchmark?.rationale,
+      usPriceSignal: `US wage $${ctx.hourlyWage.toFixed(2)}, CPI ${ctx.cpiYoY.toFixed(1)}%, Food-away CPI ${ctx.foodAwayYoY.toFixed(1)}%, consumer-stress ${Math.round(ctx.consumerStress)}. Base benchmark: ${benchmark?.sourceFamily ?? "dashboard model"}.`
     };
   });
 }
