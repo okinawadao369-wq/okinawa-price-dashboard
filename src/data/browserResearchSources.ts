@@ -131,7 +131,7 @@ export const browserResearchSources: BrowserResearchSource[] = [
     method: "official_page",
     url: "https://www.dfas.mil/Pressroom/Article/4391719/2026-military-pay-tables-on-dfas-website/",
     cadence: "年次/手当改定時",
-    quality: "observed",
+    quality: "unknown",
     canAutoCollect: false,
     dashboardMetric: "米軍基本給・BAS・特殊手当・支払い余力",
     note: "DFAS公式ページを給与アンカーとして監視。自動数値化は次段階、現時点は公式ページ・公開日・要旨を台帳化する。"
@@ -142,7 +142,7 @@ export const browserResearchSources: BrowserResearchSource[] = [
     method: "official_page",
     url: "https://www.travel.dod.mil/Allowances/BAH-Rate-Lookup/",
     cadence: "年次/随時",
-    quality: "observed",
+    quality: "unknown",
     canAutoCollect: false,
     dashboardMetric: "住宅手当・海外住宅手当・COLA・沖縄米軍家族の生活費補助",
     note: "OkinawaはOHA/COLAの公式確認が必要。公式計算ページを参照し、推定値とは分離して扱う。"
