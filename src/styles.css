@@ -88,9 +88,8 @@ a {
 }
 
 .topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
+  position: relative;
+  z-index: 10;
   border-bottom: 1px solid var(--line);
   background: rgba(8, 17, 31, 0.9);
   backdrop-filter: blur(14px);
@@ -188,6 +187,49 @@ a {
 
 .summary-box {
   grid-template-columns: 1.1fr 0.9fr;
+}
+
+.housing-impact-card {
+  overflow: hidden;
+}
+
+.housing-controls {
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);
+}
+
+.housing-summary-box {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.housing-score-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.housing-score-card {
+  min-width: 0;
+  min-height: 132px;
+}
+
+.housing-score-card .label,
+.housing-score-card .sub {
+  overflow-wrap: anywhere;
+}
+
+.housing-score-card .value {
+  font-size: clamp(22px, 1.7vw, 28px) !important;
+}
+
+.housing-explainer {
+  min-width: 0;
+}
+
+.housing-explainer .scenario {
+  margin: 0;
+  max-width: 78ch;
+  font-size: 13.5px;
+  line-height: 1.85;
 }
 
 .card {
@@ -1162,6 +1204,15 @@ tr:hover td {
     padding-left: 18px;
     padding-right: 18px;
   }
+
+  .housing-controls,
+  .housing-summary-box {
+    grid-template-columns: 1fr;
+  }
+
+  .housing-score-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
@@ -1200,6 +1251,20 @@ tr:hover td {
     min-height: 420px !important;
     height: 420px !important;
   }
+
+  .housing-score-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .housing-score-card {
+    min-height: 118px;
+  }
+
+  .housing-explainer .scenario {
+    max-width: none;
+    font-size: 12.5px;
+    line-height: 1.75;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1212,6 +1277,10 @@ tr:hover td {
   .grid-5,
   .grid-4,
   .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .housing-score-grid {
     grid-template-columns: 1fr;
   }
 }

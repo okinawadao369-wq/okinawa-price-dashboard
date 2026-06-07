@@ -21,9 +21,9 @@ export function HousingImpactPanel(props: {
 }) {
   const result = evaluateHousing(props.example, props.budget, props.fx);
   return (
-    <section className="card ai print-light">
+    <section className="card ai print-light housing-impact-card">
       <h2>住宅制度 4. Housing Impact on Purchase Power</h2>
-      <div className="form-row">
+      <div className="form-row housing-controls">
         <div>
           <label className="field-label">住宅ランク/OHAモデル</label>
           <select value={props.budget.id} onChange={(e) => props.setBudget(e.target.value)}>
@@ -37,14 +37,14 @@ export function HousingImpactPanel(props: {
           </select>
         </div>
       </div>
-      <div className="summary-box" style={{ marginTop: 18 }}>
-        <div className="grid-4">
+      <div className="summary-box housing-summary-box" style={{ marginTop: 18 }}>
+        <div className="grid-4 housing-score-grid">
           <Metric label="Base Purchase Score" value={`${Math.round(props.basePurchaseScore)}`} sub="住宅補正前" />
           <Metric label="Housing Psychology" value={`${result.housingPsychologyScore}`} sub={`${result.judgment}`} tone={tone(result.housingPsychologyScore)} />
           <Metric label="Housing Boost" value={`x${props.housingBoost.toFixed(2)}`} sub={housingBoostReason(result.housingPsychologyScore, result.allowanceGap.gapUsd, props.fx)} />
           <Metric label="Final Purchase Score" value={`${Math.round(props.finalPurchaseScore)}`} sub="住宅心理補正後" tone={tone(props.finalPurchaseScore)} />
         </div>
-        <div className="card light">
+        <div className="card light housing-explainer">
           <p className="scenario">
             この物件は、{props.budget.label} のOHA家賃枠 {usd(props.budget.rentAllowanceUsd)} に対して
             約 {usd(result.allowanceGap.gapUsd)} の差があります。面積は {props.example.sqm.toFixed(1)}㎡で、
@@ -63,7 +63,7 @@ export function HousingImpactPanel(props: {
 
 function Metric({ label, value, sub, tone = "info" }: { label: string; value: string; sub: string; tone?: string }) {
   return (
-    <div className="card light metric" style={{ padding: 14 }}>
+    <div className="card light metric housing-score-card" style={{ padding: 14 }}>
       <div className="label">{label}</div>
       <div className={`value ${tone}`} style={{ fontSize: 24 }}>{value}</div>
       <div className="sub">{sub}</div>
