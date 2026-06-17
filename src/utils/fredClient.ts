@@ -7,11 +7,13 @@ export type FredPoint = {
   date: string;
   yoy?: number;
   status: "live" | "fallback" | "cache";
+  source?: "FRED" | "BLS" | "cache" | "fallback";
   meaning: string;
   unit: string;
 };
 
 type FredObservation = { date: string; value: string };
+type FredLikeResponse = { observations: FredObservation[]; source?: "FRED" | "BLS" };
 
 const cacheKey = "fredCache";
 const cacheUpdatedAtKey = "fredCacheUpdatedAt";
@@ -24,6 +26,7 @@ export function fallbackFred(): FredPoint[] {
     date: "fallback",
     yoy: s.yoy ? 3.1 : undefined,
     status: "fallback",
+    source: "fallback",
     meaning: s.meaning,
     unit: s.unit
   }));
@@ -41,6 +44,12 @@ export const getFredCache = () => {
 
 export const getFredCacheUpdatedAt = () => localStorage.getItem(cacheUpdatedAtKey);
 
+async function fetchFredLike(url: string): Promise<FredLikeResponse> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return (await res.json()) as FredLikeResponse;
+}
+
 export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ data: FredPoint[]; logs: string[] }> {
   const key = (apiKey || inlineKey || "").trim();
   const logs: string[] = [];
@@ -48,15 +57,22 @@ export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ 
 
   const results = await Promise.all(
     fredSeries.map(async (series) => {
-      const url = key
+      const fredUrl = key
         ? `https://api.stlouisfed.org/fred/series/observations?series_id=${series.id}&api_key=${encodeURIComponent(key)}&file_type=json&sort_order=desc&limit=420`
         : `/api/fred?series_id=${encodeURIComponent(series.id)}`;
 
       try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        let json: FredLikeResponse;
+        try {
+          json = await fetchFredLike(fredUrl);
+        } catch (fredError) {
+          if (key) throw fredError;
+          const blsUrl = `/api/bls?series_id=${encodeURIComponent(series.id)}`;
+          json = await fetchFredLike(blsUrl);
+          const message = fredError instanceof Error ? fredError.message : "unknown";
+          logs.push(`${series.id} FRED取得失敗: ${message}。BLS公式APIで補完。`);
+        }
 
-        const json = (await res.json()) as { observations: FredObservation[] };
         const observations = json.observations.filter((o) => o.value !== "." && Number.isFinite(Number(o.value)));
         const latest = observations[0];
         if (!latest) throw new Error("no numeric observations");
@@ -79,6 +95,7 @@ export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ 
           date: latest.date,
           yoy,
           status: "live" as const,
+          source: json.source ?? "FRED",
           meaning: series.meaning,
           unit: series.unit
         };
@@ -87,7 +104,7 @@ export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ 
         const cachedPoint = cached?.find((point) => point.id === series.id);
         if (cachedPoint) {
           logs.push(`${series.id} FRED取得失敗: ${message}。前回キャッシュを使用。`);
-          return { ...cachedPoint, status: "cache" as const };
+          return { ...cachedPoint, status: "cache" as const, source: "cache" as const };
         }
 
         logs.push(`${series.id} FRED取得失敗: ${message}。fallback値を使用。`);
@@ -98,6 +115,7 @@ export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ 
           date: "fallback",
           yoy: series.yoy ? 3.1 : undefined,
           status: "fallback" as const,
+          source: "fallback" as const,
           meaning: series.meaning,
           unit: series.unit
         };

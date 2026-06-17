@@ -20,7 +20,10 @@ export function FredDataPanel({ data }: { data: FredPoint[] }) {
           <tbody>
             {data.map((d) => (
               <tr key={d.id}>
-                <td><span className={`pill ${d.status === "live" ? "good" : d.status === "cache" ? "warn" : "bad"}`}>{d.status}</span></td>
+                <td>
+                  <span className={`pill ${d.status === "live" ? "good" : d.status === "cache" ? "warn" : "bad"}`}>{d.status}</span>
+                  {d.source && <><br /><span className="small">{d.source}</span></>}
+                </td>
                 <td><strong>{d.label}</strong><br /><span className="small">{d.id}</span></td>
                 <td>{d.value.toFixed(d.value < 10 ? 2 : 1)} {d.unit}</td>
                 <td>{d.yoy === undefined ? "—" : `${d.yoy.toFixed(1)}%`}</td>
