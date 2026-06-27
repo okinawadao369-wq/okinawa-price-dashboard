@@ -5,10 +5,27 @@ import type { TopicScore } from "../utils/gdeltClient";
 
 const tone = (value: number) => value >= 80 ? "good" : value >= 60 ? "warn" : "bad";
 
+function daysSinceReview(date?: string) {
+  if (!date) return null;
+  const parsed = new Date(`${date}T00:00:00`);
+  if (!Number.isFinite(parsed.getTime())) return null;
+  return Math.max(0, Math.floor((Date.now() - parsed.getTime()) / 86400000));
+}
+
 export function UsPriceAnchorPanel({ fredData, newsScores, industries }: { fredData: FredPoint[]; newsScores: TopicScore[]; industries: Industry[] }) {
   const ctx = buildUsPriceAnchorContext(fredData, newsScores);
   const adjusted = industries.filter((item) => item.usPriceAdjustment && Math.abs(item.usPriceAdjustment - 1) > 0.01);
   const top = [...adjusted].sort((a, b) => (b.usPriceAdjustment ?? 1) - (a.usPriceAdjustment ?? 1)).slice(0, 6);
+  const benchmarked = industries.filter((item) => item.usPriceSource);
+  const reviewDates = benchmarked.map((item) => item.usPriceLastReviewed).filter(Boolean) as string[];
+  const sortedReviewDates = [...reviewDates].sort();
+  const latestReview = sortedReviewDates.length ? sortedReviewDates[sortedReviewDates.length - 1] : "unknown";
+  const oldestReview = sortedReviewDates.length ? sortedReviewDates[0] : undefined;
+  const staleCount = benchmarked.filter((item) => {
+    const age = daysSinceReview(item.usPriceLastReviewed);
+    return age !== null && age > 14;
+  }).length;
+  const estimatedCount = benchmarked.filter((item) => item.usPriceQuality === "estimated").length;
 
   return (
     <section className="card print-light us-price-anchor-panel">
@@ -24,6 +41,16 @@ export function UsPriceAnchorPanel({ fredData, newsScores, industries }: { fredD
           <span className="small">米国平均時給</span>
           <strong>${ctx.hourlyWage.toFixed(2)}</strong>
           <span className="small">FRED/BLS CES</span>
+        </div>
+        <div className="impact-card">
+          <span className="small">US anchor review</span>
+          <strong>{benchmarked.length}/{industries.length}</strong>
+          <span className="small">latest {latestReview}</span>
+        </div>
+        <div className="impact-card">
+          <span className="small">Evidence lane</span>
+          <strong>{estimatedCount} estimated</strong>
+          <span className="small">{staleCount ? `${staleCount} stale / oldest ${oldestReview}` : "fresh review window"}</span>
         </div>
       </div>
 
