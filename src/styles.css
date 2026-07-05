@@ -738,6 +738,62 @@ tr:hover td {
   gap: 10px;
 }
 
+.price-opportunity-panel {
+  overflow: hidden;
+}
+
+.opportunity-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.opportunity-row {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.54);
+  padding: 14px;
+}
+
+.opportunity-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.opportunity-main strong,
+.opportunity-action strong {
+  overflow-wrap: anywhere;
+}
+
+.opportunity-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.opportunity-metrics > div,
+.opportunity-action {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  background: rgba(8, 17, 31, 0.42);
+  padding: 10px;
+}
+
+.opportunity-metrics strong {
+  color: #f8fafc;
+  font-size: 15px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .strategic-summary {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
@@ -1195,6 +1251,10 @@ tr:hover td {
     grid-template-columns: 1fr;
   }
 
+  .opportunity-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .health-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1236,6 +1296,15 @@ tr:hover td {
   }
 
   .health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .opportunity-main {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .opportunity-metrics {
     grid-template-columns: 1fr;
   }
 

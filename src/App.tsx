@@ -19,6 +19,7 @@ import { LiveFxPanel } from "./components/LiveFxPanel";
 import { MobileExecutiveSummary } from "./components/MobileExecutiveSummary";
 import { BrowserResearchPanel } from "./components/BrowserResearchPanel";
 import { GdeltImpactPanel } from "./components/GdeltImpactPanel";
+import { PriceOpportunityPanel } from "./components/PriceOpportunityPanel";
 import { UsPriceAnchorPanel } from "./components/UsPriceAnchorPanel";
 import { AiHousingConsultantPanel } from "./components/AiHousingConsultantPanel";
 import { HousingCharts } from "./components/HousingCharts";
@@ -254,6 +255,7 @@ export default function App() {
         <StrategicIntelligencePanel intelligence={strategicIntelligence} />
         <GdeltImpactPanel scores={newsScores} />
         <UsPriceAnchorPanel fredData={fredData} newsScores={newsScores} industries={pricedIndustries} />
+        <PriceOpportunityPanel industries={pricedIndustries} fx={fx} />
         <MarketDataOpsPanel ops={marketDataOps} />
         <BrowserResearchPanel rssIntel={rssIntel} />
         <PricingSimulator industries={pricedIndustries} segments={segments} areas={areas} selectedIndustry={selectedIndustry} selectedSegment={selectedSegment} selectedArea={selectedArea} price={price} fx={fx} cpiYoY={cpiYoY} geoRisk={newsAgg.geoRisk} marketTemperature={marketTemperature} basePurchaseScore={basePurchaseScore} housingPsychologyScore={housingEvaluation.housingPsychologyScore} housingBoost={housingEvaluation.housingBoost} finalPurchaseScore={score} housingBoostReason={housingReason} setIndustry={setSelectedIndustryId} setSegment={setSelectedSegmentId} setArea={setSelectedAreaName} setPrice={setPrice} setFx={(value) => { setManualFxOverride(true); setSelectedFx(value); }} />
