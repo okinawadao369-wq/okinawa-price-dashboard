@@ -15,6 +15,27 @@ npm.cmd run dev
 npm.cmd run build
 ```
 
+## GitHub Pages
+
+This project can be published from `Koya932/Koya932` with GitHub Actions.
+
+1. Push `main` to `https://github.com/Koya932/Koya932`.
+2. Open `Settings > Pages`.
+3. Set `Source` to `GitHub Actions`.
+4. Run or wait for `Deploy Dashboard to GitHub Pages`.
+
+Expected URL:
+
+```text
+https://koya932.github.io/Koya932/
+```
+
+GitHub Pages is static hosting, so serverless API routes do not run there. The client automatically uses the existing Vercel API base for FRED, exchange-rate, RSS, and GDELT proxy calls. Override it only when you have another API host:
+
+```env
+VITE_API_BASE_URL=https://your-api-host.example.com
+```
+
 ## Environment Variables
 
 For production, set this on the hosting provider:

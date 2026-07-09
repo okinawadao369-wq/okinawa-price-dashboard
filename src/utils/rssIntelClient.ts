@@ -1,3 +1,5 @@
+import { apiUrl } from "./apiBase";
+
 export type RssIntelItem = {
   title: string;
   link: string;
@@ -52,7 +54,7 @@ export function getRssIntelCache() {
 export async function fetchRssIntel(): Promise<{ data: RssIntelResult; logs: string[] }> {
   const logs: string[] = [];
   try {
-    const response = await fetch("/api/rss-intel");
+    const response = await fetch(apiUrl("/api/rss-intel"));
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
     const data = (await response.json()) as RssIntelResult;
     localStorage.setItem(cacheKey, JSON.stringify(data));

@@ -1,4 +1,5 @@
 import { newsTopics, type NewsTopic } from "../data/baseData";
+import { apiUrl } from "./apiBase";
 import { clamp } from "./pricingEngine";
 
 export type NewsArticle = {
@@ -186,7 +187,7 @@ export function gdeltCacheNeedsRefresh(timespan: string) {
 function gdeltUrls(query: string, timespan: string, maxrecords = 50) {
   const params = new URLSearchParams({ query, timespan, maxrecords: String(maxrecords) });
   const direct = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&format=json&maxrecords=${maxrecords}&sort=datedesc&timespan=${timespan}&sourcelang=english`;
-  const proxy = `/api/gdelt?${params.toString()}`;
+  const proxy = apiUrl(`/api/gdelt?${params.toString()}`);
   return [proxy, direct];
 }
 

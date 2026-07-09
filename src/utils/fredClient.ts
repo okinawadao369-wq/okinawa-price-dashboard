@@ -1,4 +1,5 @@
 import { fredSeries } from "../data/baseData";
+import { apiUrl } from "./apiBase";
 
 export type FredPoint = {
   id: string;
@@ -59,7 +60,7 @@ export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ 
     fredSeries.map(async (series) => {
       const fredUrl = key
         ? `https://api.stlouisfed.org/fred/series/observations?series_id=${series.id}&api_key=${encodeURIComponent(key)}&file_type=json&sort_order=desc&limit=420`
-        : `/api/fred?series_id=${encodeURIComponent(series.id)}`;
+        : apiUrl(`/api/fred?series_id=${encodeURIComponent(series.id)}`);
 
       try {
         let json: FredLikeResponse;
@@ -67,7 +68,7 @@ export async function fetchFred(apiKey?: string, inlineKey?: string): Promise<{ 
           json = await fetchFredLike(fredUrl);
         } catch (fredError) {
           if (key) throw fredError;
-          const blsUrl = `/api/bls?series_id=${encodeURIComponent(series.id)}`;
+          const blsUrl = apiUrl(`/api/bls?series_id=${encodeURIComponent(series.id)}`);
           json = await fetchFredLike(blsUrl);
           const message = fredError instanceof Error ? fredError.message : "unknown";
           logs.push(`${series.id} FRED取得失敗: ${message}。BLS公式APIで補完。`);

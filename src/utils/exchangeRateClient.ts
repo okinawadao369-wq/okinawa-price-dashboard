@@ -1,3 +1,5 @@
+import { apiUrl } from "./apiBase";
+
 export type ExchangeRatePoint = {
   pair: "USD/JPY";
   value: number;
@@ -57,7 +59,7 @@ export async function fetchExchangeRate(): Promise<{ data: ExchangeRatePoint; lo
   const providers: Provider[] = [
     {
       name: "Vercel exchange-rate proxy",
-      url: "/api/exchange-rate",
+      url: apiUrl("/api/exchange-rate"),
       parse: (payload: any) => {
         const point = normalizePoint(payload, "Vercel exchange-rate proxy");
         return { value: point.value, observedAt: point.observedAt };
