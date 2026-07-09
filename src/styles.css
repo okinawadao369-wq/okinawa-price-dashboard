@@ -147,6 +147,7 @@ a {
   margin: 0 auto;
   padding: 24px 32px 60px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
 }
 
@@ -162,6 +163,17 @@ a {
 .summary-box {
   display: grid;
   gap: 18px;
+}
+
+.dashboard-main > *,
+.grid-2 > *,
+.grid-3 > *,
+.grid-4 > *,
+.grid-5 > *,
+.form-row > *,
+.summary-box > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .grid-2 {
@@ -454,6 +466,8 @@ a {
 .fx-track i.info { background: linear-gradient(90deg, #38bdf8, #a78bfa); }
 
 .table-wrap {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
 }
 

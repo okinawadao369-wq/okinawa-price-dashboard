@@ -26,6 +26,7 @@ export type Industry = {
   usPriceAdjustment?: number;
   usPriceSignal?: string;
   usPriceSource?: string;
+  usPriceSourceUrl?: string;
   usPriceLastReviewed?: string;
   usPriceRationale?: string;
   usPriceQuality?: "observed" | "estimated" | "fallback" | "unknown";

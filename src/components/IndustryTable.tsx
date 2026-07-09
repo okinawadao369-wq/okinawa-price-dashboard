@@ -39,7 +39,11 @@ export function IndustryTable({ industries, segment, area, fx, cpiYoY, geoRisk, 
                   <td><strong>{yen(range[0])}〜{yen(range[1])}</strong></td>
                   <td><span className={`pill ${score >= 80 ? "good" : score >= 60 ? "warn" : "bad"}`}>{Math.round(score)}</span><br /><span className="small">base {Math.round(baseScore)} / housing x{housingBoost.toFixed(2)}</span></td>
                   <td><span className={`pill ${tone}`}>{label}</span><br /><span className="small">{verdict(score)}</span></td>
-                  <td>{item.frequency}<br /><span className="small">{item.usPriceSource}</span></td>
+                  <td>
+                    {item.frequency}<br />
+                    <span className="small">{item.usPriceSource}</span>
+                    {item.usPriceSourceUrl ? <><br /><a className="small" href={item.usPriceSourceUrl} target="_blank" rel="noreferrer">根拠ページを確認</a></> : null}
+                  </td>
                 </tr>
               );
             })}

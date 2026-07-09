@@ -6,7 +6,9 @@ export const yen = (value: number) => `¥${Math.round(value).toLocaleString("ja-
 export const usd = (value: number) => `$${value.toLocaleString("en-US", { maximumFractionDigits: value < 10 ? 2 : 0 })}`;
 
 export function recommendedRange(item: Industry, fx: number, cpiYoY: number, geoRisk: number): [number, number] {
-  const inflationLift = clamp(1 + (cpiYoY - 3) / 100, 0.96, 1.09);
+  // Adjusted U.S. anchors already contain CPI/wage pressure. Apply the legacy CPI
+  // lift only when an unadjusted industry record is passed directly.
+  const inflationLift = item.usPriceAdjustment ? 1 : clamp(1 + (cpiYoY - 3) / 100, 0.96, 1.09);
   const geoBoost = clamp(1 + (geoRisk - 55) / 1000, 0.98, 1.05);
   const low = item.usLow * fx * item.discount * inflationLift * geoBoost;
   const high = item.usHigh * fx * Math.min(0.96, item.discount + 0.16) * item.premium * inflationLift * geoBoost;

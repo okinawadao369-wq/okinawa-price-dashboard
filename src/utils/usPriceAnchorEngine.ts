@@ -90,6 +90,7 @@ export function adjustIndustryUsAnchors(industries: Industry[], fredData: FredPo
       usPriceAdjustment: multiplier,
       usPriceQuality: benchmark?.quality ?? "estimated",
       usPriceSource: benchmark?.sourceFamily ?? "Base dashboard model + FRED/GDELT adjustment",
+      usPriceSourceUrl: benchmark?.sourceUrl,
       usPriceLastReviewed: benchmark?.lastReviewed,
       usPriceRationale: benchmark?.rationale,
       usPriceSignal: `US wage $${ctx.hourlyWage.toFixed(2)}, CPI ${ctx.cpiYoY.toFixed(1)}%, Food-away CPI ${ctx.foodAwayYoY.toFixed(1)}%, consumer-stress ${Math.round(ctx.consumerStress)}. Base benchmark: ${benchmark?.sourceFamily ?? "dashboard model"}.`

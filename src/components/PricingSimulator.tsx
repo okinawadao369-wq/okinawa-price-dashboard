@@ -79,6 +79,7 @@ export function PricingSimulator(props: {
             米国単価根拠: {props.selectedIndustry.usPriceSource ?? "dashboard model"} / 品質: {props.selectedIndustry.usPriceQuality ?? "estimated"}
             {props.selectedIndustry.usPriceLastReviewed ? ` / 確認日: ${props.selectedIndustry.usPriceLastReviewed}` : ""}
             {props.selectedIndustry.usPriceRationale ? ` / ${props.selectedIndustry.usPriceRationale}` : ""}
+            {props.selectedIndustry.usPriceSourceUrl ? <> / <a href={props.selectedIndustry.usPriceSourceUrl} target="_blank" rel="noreferrer">根拠ページ</a></> : ""}
           </span>
         </p>
       )}
@@ -87,7 +88,7 @@ export function PricingSimulator(props: {
         <div className="grid-4">
           <Metric label="米国単価アンカー" value={`${usd(props.selectedIndustry.usLow)}〜${usd(props.selectedIndustry.usHigh)}`} sub={`${yen(props.selectedIndustry.usLow * props.fx)}〜${yen(props.selectedIndustry.usHigh * props.fx)} / ${props.selectedIndustry.unit}`} />
           <Metric label="入力価格のドル換算" value={usd(props.price / props.fx)} sub="米軍顧客の体感価格" />
-          <Metric label="沖縄推奨価格帯" value={`${yen(range[0])}〜${yen(range[1])}`} sub="米国単価 x 円安 x 沖縄割安感" />
+          <Metric label="沖縄推奨価格帯" value={`${yen(range[0])}〜${yen(range[1])}`} sub="補正済み米国単価 × 為替 × 沖縄係数" />
           <Metric label="価格差" value={diff < 0 ? `${yen(Math.abs(diff))}低い` : `${yen(diff)}上`} sub={diff < 0 ? "推奨下限より安い＝値上げ余地あり" : props.price <= range[1] ? "推奨帯の範囲内" : "推奨上限超え。価値説明が必要"} />
         </div>
         <div className="card light metric">
